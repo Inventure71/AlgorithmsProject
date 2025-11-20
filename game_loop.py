@@ -1,4 +1,5 @@
-from arena import Arena
+from arena.arena import Arena
+from troops.generic_troop import Troop
 import pygame
 
 colors = {
@@ -24,13 +25,14 @@ clock = pygame.time.Clock()
 arena = Arena(rows)
 arena.world_generation()
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+location = (0, 0)
+simple_troop = Troop(name="simple_troop", health=100, damage=1, range=1, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=1, location=location, arena=arena)
+arena.spawn_unit(simple_troop, location)
 
-    screen.fill((0, 0, 0))
+
+
+
+def draw_arena():
     for y, row in enumerate(arena.grid):
         for x, value in enumerate(row):
             # Calculate precise pixel coordinates to avoid gaps due to float truncation
@@ -45,6 +47,28 @@ while True:
             if draw_borders:
                 # Draw border (white, thickness 1)
                 pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+
+def game_tick():
+    for troop in arena.occupancy_grid.values():
+        troop.move()
+
+def draw_units():
+    for troop in arena.occupancy_grid.values():
+        pygame.draw.rect(screen, troop.color, (troop.location[1] * tile_size, troop.location[0] * tile_size, tile_size, tile_size))
+
+
+
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+
+    screen.fill((0, 0, 0))
+    draw_arena()
+    game_tick()
+    draw_units()
     pygame.display.flip()
     clock.tick(60)
 
