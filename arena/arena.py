@@ -44,12 +44,28 @@ class Arena:
         # so we have two systems that go from lower center - (height_of_river//2) to lower center + (height_of_river//2) and from lower center + 1 - (height_of_river//2) to lower center + 1 + (height_of_river//2)
         # we combine them into one loop
         lower_center = self.height_index_1//2 - 1 
-        for i in range(lower_center+1, (lower_center+1)+(int(self.height_of_river//2) - 1) + 1): #  lower_center-(int(self.height_of_river//2) - 1), (lower_center+1)+(int(self.height_of_river//2) - 1) + 1)
+        for i in range(lower_center+1, (lower_center+1)+(self.height_of_river - 1) + 1): #  lower_center-(int(self.height_of_river//2) - 1), (lower_center+1)+(int(self.height_of_river//2) - 1) + 1)
             #print("lower center", i)
             for index in range(len(self.grid[i])):
                 self.grid[i][index] = 2
 
-    
+    def generate_tower(self,  
+        base_size_width = 3,
+        base_size_height = 3,
+        distance_from_left = 3,
+        distance_from_bottom = 5):
+
+        scaled_width = int(self.width_index_1/18*base_size_width)
+        scaled_height = int(self.height_index_1/32*base_size_height)
+
+        bottom_left = (int(self.width_index_1/18*distance_from_left)-1, self.height-int(self.height_index_1/32*distance_from_bottom) - 1) # from the left, from the top
+
+        for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
+            for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
+                self.grid[index_row][index_col] = 4
+                print("grid", index_row, index_col)
+
+
     def generate_towers(self):
         # king tower bottom side
         # 1/32 from the bottom
@@ -57,21 +73,38 @@ class Arena:
         # tower is 4x4 (4/18, 4/32)
         # we are searching for bottom left corner
 
+        base_size_width = 4
+        base_size_height = 4
+        distance_from_left = 8
+        distance_from_bottom = 1
+        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
 
-        scaled_width_of_king = int(self.width_index_1/18*4)
-        scaled_height = int(self.height_index_1/32*4)
-        print(scaled_height)
-        
-
-        bottom_left = (int(self.width_index_1/18*8)-1, self.height-int(self.height_index_1/32) - 1) # from the left, from the top
-        self.grid[bottom_left[1]][bottom_left[0]] = 4
-
-        for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
-            for index_col in range(bottom_left[0], bottom_left[0]+scaled_width_of_king):
-                self.grid[index_row][index_col] = 4
-                print("grid", index_row, index_col)
 
         # princes towers bottom side
+        # left tower bottom left corner is
+        # * 3 from the left
+        # * 5 grom the bottom 
+        # * size is 3x3 (3/32, 3/18)
+        
+        # right botttom RIGHT princess is:
+        # * 5 away from the right (14/18 from the left)
+        # * 5 from the bottom 
+        # * size is 3x3 (3/32, 3/18)
+
+        # princess left
+        base_size_width = 3
+        base_size_height = 3
+        distance_from_left = 3
+        distance_from_bottom = 5
+        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
+
+        # princess right 
+        base_size_width = 3
+        base_size_height = 3
+        distance_from_left = 14
+        distance_from_bottom = 5
+        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
+
        
     
     def generate_path(self):

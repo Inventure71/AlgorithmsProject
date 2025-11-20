@@ -11,7 +11,7 @@ colors = {
     4: (191, 143, 36) # tower
 }
 
-rows = 32 #32
+rows = 16 #32
 cols = int(rows / 16 * 9)
 tile_size = 25 # for now
 
