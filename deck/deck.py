@@ -18,7 +18,12 @@ class Deck:
         self.list_to_queue(self.full_list)
 
     def get_card(self):
-        card = self.cards.dequeue()
-        self.cards.enqueue(card) # we add it back at the end so the deck can't end
-        return card
+        #card = self.cards.dequeue()
+        #self.cards.enqueue(card) # we add it back at the end so the deck can't end
+        return self.cards.dequeue()
+    
+    def add_card(self, card): # to the end of the deck
+        self.cards.enqueue(card)
+
+        
 

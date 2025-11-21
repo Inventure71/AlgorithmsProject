@@ -24,7 +24,7 @@ class Card:
         else:
             raise ValueError(f"Troop {troop_name} not found in stats")
 
-    def create_troop(self, location, arena, team):
+    def create_troop(self, team):
         self.troop = self.troop_class(
             name=self.troop_name, 
             health=self.troop_health, 
@@ -37,8 +37,6 @@ class Card:
             attack_cooldown=self.troop_attack_cooldown, 
             size=self.troop_size, 
             color=self.color, 
-            team=team, 
-            location=location, 
-            arena=arena)
+            team=team)
         return self.troop
     
