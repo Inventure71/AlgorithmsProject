@@ -176,9 +176,14 @@ while True:
 
                 for rect, card in card_rects:
                     if rect.collidepoint(mouse_pos):
-                        selected_card = card
+                        if selected_card == card:
+                            selected_card = None
+                            print(f"De selected: {card.name}")
+                        else:
+                            selected_card = card
+                            print(f"Selected: {card.name}")
+                        
                         click_handled = True
-                        print(f"Selected: {card.name}")
                         break # found the event, stop searching
                 
                 if not click_handled and selected_card is not None: # which means not in the cards area and we have a selected card
@@ -197,6 +202,7 @@ while True:
                         selected_card = None
 
                         click_handled = True # in case we add other statments later 
+                
 
     screen.fill((0, 0, 0))
     draw_arena(selected_card, team=1)
