@@ -3,7 +3,6 @@ from deck.card import Card
 from deck.deck import Deck
 from player import Player
 from troops.generic_troop import Troop
-from arena.utils.random_utils import is_cell_in_bounds
 import pygame
 
 colors = {
@@ -12,7 +11,8 @@ colors = {
     2: (0, 157, 214),  # water
     3: (133, 133, 133),   # bridge
     4: (191, 143, 36), # tower p1
-    5: (200, 100, 100) # tower p2
+    5: (200, 100, 100), # tower p2
+    9: (200, 100, 100, 100) # transparent red
 }
 
 cards = [Card(name="card1", cost=1, color="red", troop_class=Troop, troop_name="barbarian"), 
@@ -36,6 +36,7 @@ rows = int(32) #32
 cols = int(rows / 16 * 9)
 draw_borders = True
 hand_area_height = 100
+draw_placable_cells = True
 
 
 """
@@ -72,7 +73,7 @@ def add_test_troops():
     simple_troop_team_2 = Troop(name="simple_troop", health=100, damage=1, range=1, movement_speed=2, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=1, location=location, arena=arena)
     arena.spawn_unit(simple_troop_team_2, location)
 
-def draw_arena():
+def draw_arena(draw_placable_cells=False, team=1):
     for y, row in enumerate(arena.grid):
         for x, value in enumerate(row):
             # Calculate precise pixel coordinates to avoid gaps due to float truncation
@@ -80,10 +81,16 @@ def draw_arena():
             y_pos = int(y * tile_size)
             width = int((x + 1) * tile_size) - x_pos
             height = int((y + 1) * tile_size) - y_pos
-            
+
             rect = pygame.Rect(x_pos, y_pos, width, height)
+            color = colors[value]                    
+            
             # Fill tile
             pygame.draw.rect(screen, colors[value], rect)
+            if draw_placable_cells:
+                if arena.is_placable_cell(y, x, team=1):
+                    pygame.draw.rect(screen, colors[9], rect)
+
             if draw_borders:
                 # Draw border (white, thickness 1)
                 pygame.draw.rect(screen, (255, 255, 255), rect, 1)
@@ -145,12 +152,15 @@ def draw_hand(player):
     
     return card_rects
 
+
 setup_arena()
 player_1 = Player(name="Player 1", deck=deck, team=1, arena=arena)
 player_2 = Player(name="Player 2", deck=deck, team=2, arena=arena)
 player_1.setup_hand()
 player_2.setup_hand()
 
+
+# the loop only works for player 1 input for now
 while True:
     # here we handle pygame events
     for event in pygame.event.get():
@@ -177,7 +187,7 @@ while True:
                     clicked_col = int(mouse_pos[0] // tile_size)
 
                     # check boundaries 
-                    if is_cell_in_bounds((clicked_row, clicked_col), arena.grid) and arena.is_walkable(clicked_row, clicked_col):
+                    if arena.is_placable_cell(clicked_row, clicked_col, 1):
                         print(f"Placing troop at {clicked_row}, {clicked_col}")
                         
                         # player 
@@ -189,7 +199,7 @@ while True:
                         click_handled = True # in case we add other statments later 
 
     screen.fill((0, 0, 0))
-    draw_arena()
+    draw_arena(selected_card, team=1)
     game_tick()
     draw_units()
 

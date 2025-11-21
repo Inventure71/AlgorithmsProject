@@ -163,6 +163,18 @@ class Arena:
     def is_walkable(self, row, col):
         return self.grid[row][col] in walkable_cells
 
+    def is_placable_cell(self, row, col, team):
+        if not is_cell_in_bounds((row, col), self.grid):
+            return False
+        if not self.is_walkable(row, col):
+            return False
+        if team == 1 and row < self.height//2 + 1:
+            return False
+        if team == 2 and row > self.height//2 - 2:
+            return False
+        
+        return True
+
     def spawn_unit(self, troop, cell: (int, int)):
         if not is_cell_in_bounds(cell, self.grid):
             return False
