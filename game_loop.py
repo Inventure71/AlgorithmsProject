@@ -25,11 +25,13 @@ clock = pygame.time.Clock()
 arena = Arena(rows)
 arena.world_generation()
 
-location = (0, 0)
-simple_troop = Troop(name="simple_troop", health=100, damage=1, range=1, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=1, location=location, arena=arena)
+location = (10, 2)
+simple_troop = Troop(name="simple_troop", health=100, damage=1, range=1, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=2, location=location, arena=arena)
 arena.spawn_unit(simple_troop, location)
 
-
+location = (rows-10, 2)
+simple_troop_team_2 = Troop(name="simple_troop", health=100, damage=1, range=1, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=1, location=location, arena=arena)
+arena.spawn_unit(simple_troop_team_2, location)
 
 
 def draw_arena():
@@ -49,14 +51,13 @@ def draw_arena():
                 pygame.draw.rect(screen, (255, 255, 255), rect, 1)
 
 def game_tick():
-    for troop in arena.occupancy_grid.values():
+    for troop in list(arena.occupancy_grid.values()):
         troop.move()
 
 def draw_units():
     for troop in arena.occupancy_grid.values():
-        pygame.draw.rect(screen, troop.color, (troop.location[1] * tile_size, troop.location[0] * tile_size, tile_size, tile_size))
-
-
+        #TODO: scale the troop up like we do with the rest of the tiles 
+        pygame.draw.rect(screen, troop.color, (troop.location[1] * tile_size , troop.location[0] * tile_size, tile_size, tile_size))
 
 
 while True:

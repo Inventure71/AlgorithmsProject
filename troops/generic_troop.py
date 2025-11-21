@@ -38,11 +38,11 @@ class Troop:
         # move in that direction on the board
 
         if self.team == 1:
-            direction = (1, 0)
-        else:
             direction = (-1, 0)
+        else:
+            direction = (1, 0)
 
-        target_cell = direction
+        target_cell = (self.location[0] + direction[0], self.location[1] + direction[1])
         
         if not self.arena.move_unit(self, target_cell):
             print("ERROR MOVING")

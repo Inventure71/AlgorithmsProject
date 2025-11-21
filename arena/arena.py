@@ -179,6 +179,10 @@ class Arena:
         """
         if not is_cell_in_bounds(new_cell, self.grid):
             return False
+            
+        if new_cell in self.occupancy_grid:
+            # Cell is occupied by another troop
+            return False
 
         if self.grid[new_cell[0]][new_cell[1]] in walkable_cells:
             self.occupancy_grid.pop(troop.location)
