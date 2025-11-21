@@ -1,4 +1,5 @@
 import random
+from turtle import heading, width
 from arena.utils.random_utils import is_cell_in_bounds
 
 """

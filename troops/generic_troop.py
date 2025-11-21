@@ -1,4 +1,5 @@
 import random
+from tkinter import NO
 from arena.utils.find_path_bfs import find_path_bfs
 
 
@@ -17,8 +18,8 @@ class Troop:
         size,
         color,
         team,
-        location,
-        arena,
+        location = None,
+        arena = None,
         ):
         self.name = name
         self.health = health
@@ -55,7 +56,7 @@ class Troop:
         if not self.arena.move_unit(self, target_cell):
             print("ERROR MOVING")
 
-    def move_test(self):
+    def move_random_target(self):
         if  not self.target or self.location == self.target:
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
         
@@ -66,6 +67,11 @@ class Troop:
                 if path_index < len(path):
                     if not self.arena.move_unit(self, path[path_index]):
                         print("ERROR MOVING")
+                        self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
+                    else:
+                        self.location = path[path_index]
+                        
+                    
         else:
             print("NO PATH FOUND")
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))

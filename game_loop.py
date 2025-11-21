@@ -3,6 +3,7 @@ from deck.card import Card
 from deck.deck import Deck
 from player import Player
 from troops.generic_troop import Troop
+from arena.utils.random_utils import is_cell_in_bounds
 import pygame
 
 colors = {
@@ -14,16 +15,16 @@ colors = {
     5: (200, 100, 100) # tower p2
 }
 
-cards = [Card(name="card1", cost=1, color="red", troop_name="barbarian"), 
-    Card(name="card2", cost=2, color="blue", troop_name="barbarian"),
-    Card(name="card3", cost=3, color="green", troop_name="barbarian"),
-    Card(name="card4", cost=4, color="yellow", troop_name="barbarian"),
-    Card(name="card5", cost=5, color="purple", troop_name="barbarian"),
-    Card(name="card6", cost=6, color="orange", troop_name="barbarian"),
-    Card(name="card7", cost=7, color="red", troop_name="barbarian"),
-    Card(name="card8", cost=8, color="blue", troop_name="barbarian"),
-    Card(name="card9", cost=9, color="green", troop_name="barbarian"),
-    Card(name="card10", cost=10, color="yellow", troop_name="barbarian")]
+cards = [Card(name="card1", cost=1, color="red", troop_class=Troop, troop_name="barbarian"), 
+    Card(name="card2", cost=2, color="blue", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card3", cost=3, color="green", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card4", cost=4, color="yellow", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card5", cost=5, color="purple", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card6", cost=6, color="orange", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card7", cost=7, color="red", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card8", cost=8, color="blue", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card9", cost=9, color="green", troop_class=Troop, troop_name="barbarian"),
+    Card(name="card10", cost=10, color="yellow", troop_class=Troop, troop_name="barbarian")]
 
 deck = Deck(cards)
 deck.shuffle_cards()
@@ -45,9 +46,8 @@ clock = None
 arena = None
 tile_size = None
 selected_card = None
+card_rects = []
 
-player_1 = Player(name="Player 1", deck=deck, team=1, arena=arena)
-player_2 = Player(name="Player 2", deck=deck, team=2, arena=arena)
 
 def setup_arena():
     global screen, clock, arena, tile_size
@@ -90,7 +90,7 @@ def draw_arena():
 
 def game_tick():
     for troop in list(arena.occupancy_grid.values()):
-        troop.move_test()
+        troop.move_random_target()
 
 def draw_units():
     for troop in arena.occupancy_grid.values():
@@ -146,11 +146,47 @@ def draw_hand(player):
     return card_rects
 
 setup_arena()
+player_1 = Player(name="Player 1", deck=deck, team=1, arena=arena)
+player_2 = Player(name="Player 2", deck=deck, team=2, arena=arena)
+player_1.setup_hand()
+player_2.setup_hand()
+
 while True:
+    # here we handle pygame events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+        
+        # left click
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1: # left Mouse Button
+                mouse_pos = pygame.mouse.get_pos() # get position on screen
+                click_handled = False
+
+                for rect, card in card_rects:
+                    if rect.collidepoint(mouse_pos):
+                        selected_card = card
+                        click_handled = True
+                        print(f"Selected: {card.name}")
+                        break # found the event, stop searching
+                
+                if not click_handled and selected_card is not None: # which means not in the cards area and we have a selected card
+                    # we convert to the grid, but now we need to check if it is in that grid
+                    clicked_row = int(mouse_pos[1] // tile_size)
+                    clicked_col = int(mouse_pos[0] // tile_size)
+
+                    # check boundaries 
+                    if is_cell_in_bounds((clicked_row, clicked_col), arena.grid):
+                        print(f"Placing troop at {clicked_row}, {clicked_col}")
+                        
+                        # player 
+                        player_1.place_troop((clicked_row, clicked_col), selected_card)
+                        
+                        # deselect after playing
+                        selected_card = None
+
+                        click_handled = True # in case we add other statments later 
 
     screen.fill((0, 0, 0))
     draw_arena()

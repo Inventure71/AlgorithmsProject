@@ -5,9 +5,11 @@ class Card:
     name, 
     cost, 
     color, 
+    troop_class,
     troop_name):
         self.name = name
         self.cost = cost
+        self.troop_class = troop_class
         self.color = color
 
         self.troop_name = troop_name
