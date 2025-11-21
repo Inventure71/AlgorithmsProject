@@ -1,5 +1,6 @@
 import random
 from arena.utils.random_utils import is_cell_in_bounds
+
 """
 TODO: we craft only half of the arena and then mirror it to the other half.
 TODO: fix issue with sizes smaller than 32 
@@ -10,7 +11,7 @@ Remember
 cell = (int, int) means (row, col) in a way (y,x)
 """
 
-EMPTY=0; GRASS=1; WATER=2; BRIDGE=3; TOWER=4
+EMPTY=0; GRASS=1; WATER=2; BRIDGE=3; TOWER_P1=4; TOWER_P2=5
 walkable_cells = [GRASS, BRIDGE]
 
 class Arena:
@@ -61,7 +62,8 @@ class Arena:
         base_size_width = 3,
         base_size_height = 3,
         distance_from_left = 3,
-        distance_from_bottom = 5):
+        distance_from_bottom = 5
+        ):
 
         scaled_width = int(self.width/18*base_size_width)
         scaled_height = int(self.height/32*base_size_height)
@@ -70,7 +72,7 @@ class Arena:
 
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
             for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
-                self.grid[index_row][index_col] = TOWER
+                self.grid[index_row][index_col] = TOWER_P1
                 #print("grid", index_row, index_col)
 
     def generate_towers(self):
@@ -144,7 +146,11 @@ class Arena:
         lower_center = self.height//2 
         print("lower center", lower_center)
         for row in range(lower_center, self.height):
-            self.grid[self.height-row-1] = self.grid[row].copy()
+            for col in range(self.width):
+                if self.grid[row][col] == TOWER_P1:
+                    self.grid[self.height-row-1][col] = TOWER_P2
+                else:
+                    self.grid[self.height-row-1][col] = self.grid[row][col]
 
     def world_generation(self):
         self.generate_river()
