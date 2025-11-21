@@ -177,7 +177,7 @@ while True:
                     clicked_col = int(mouse_pos[0] // tile_size)
 
                     # check boundaries 
-                    if is_cell_in_bounds((clicked_row, clicked_col), arena.grid):
+                    if is_cell_in_bounds((clicked_row, clicked_col), arena.grid) and arena.is_walkable(clicked_row, clicked_col):
                         print(f"Placing troop at {clicked_row}, {clicked_col}")
                         
                         # player 
