@@ -1,5 +1,6 @@
 import random
 from tkinter import NO
+from constants import *
 from arena.utils.find_path_bfs import find_path_bfs
 
 
@@ -43,24 +44,28 @@ class Troop:
         """EXP"""
         self.target = None
     
-    def move_v1(self): # row, col
-        # move in that direction on the board
+    def move_to_tower(self):
+        tower_type = TOWER_P2 if self.team == 1 else TOWER_P1
 
-        if self.team == 1:
-            direction = (-1, 0)
-        else:
-            direction = (1, 0)
-
-        target_cell = (self.location[0] + direction[0], self.location[1] + direction[1])
         
-        if not self.arena.move_unit(self, target_cell):
-            print("ERROR MOVING")
+        path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=tower_type)
+        
+        if path:
+            for path_index in range(1, self.movement_speed + 1):
+                if path_index < len(path):
+                    if not self.arena.move_unit(self, path[path_index]):
+                        print("ERROR MOVING")
+                    else:
+                        self.location = path[path_index]
+                        
+        else:
+            print("NO PATH FOUND TO TOWER")
 
     def move_random_target(self):
         if  not self.target or self.location == self.target:
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
         
-        path = find_path_bfs(self.location, self.arena, goal_cell=self.target)
+        path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, goal_cell=self.target)
         
         if path:
             for path_index in range(1, self.movement_speed + 1):

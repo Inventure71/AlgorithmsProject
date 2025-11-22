@@ -1,3 +1,7 @@
+from constants import *
+
+def is_walkable(row, col, grid):
+        return grid[row][col] in walkable_cells
 
 
 def is_cell_in_bounds(cell: (int, int), grid):

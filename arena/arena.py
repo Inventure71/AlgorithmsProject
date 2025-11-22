@@ -1,9 +1,9 @@
 import random
-from turtle import heading, width
-from arena.utils.random_utils import is_cell_in_bounds
+from arena.utils.random_utils import is_cell_in_bounds, is_walkable
+from constants import *
 
 """
-TODO: we craft only half of the arena and then mirror it to the other half.
+DONE: we craft only half of the arena and then mirror it to the other half.
 TODO: fix issue with sizes smaller than 32 
 """
 
@@ -11,9 +11,6 @@ TODO: fix issue with sizes smaller than 32
 Remember 
 cell = (int, int) means (row, col) in a way (y,x)
 """
-
-EMPTY=0; GRASS=1; WATER=2; BRIDGE=3; TOWER_P1=4; TOWER_P2=5
-walkable_cells = [GRASS, BRIDGE]
 
 class Arena:
     """
@@ -160,17 +157,14 @@ class Arena:
         self.mirror_arena()
     
     """utils"""
-    def is_walkable(self, row, col):
-        return self.grid[row][col] in walkable_cells
-
     def is_placable_cell(self, row, col, team):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
-        if not self.is_walkable(row, col):
+        if not is_walkable(row, col, self.grid):
             return False
-        if team == 1 and row < self.height//2 + 1:
+        if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
             return False
-        if team == 2 and row > self.height//2 - 2:
+        if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
             return False
         
         return True

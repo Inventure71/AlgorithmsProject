@@ -1,3 +1,4 @@
+from re import I
 from arena.arena import Arena
 from deck.card import Card
 from deck.deck import Deck
@@ -37,6 +38,7 @@ cols = int(rows / 16 * 9)
 draw_borders = True
 hand_area_height = 100
 draw_placable_cells = True
+tick_rate = 10 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
 
 
 """
@@ -47,6 +49,7 @@ clock = None
 arena = None
 tile_size = None
 selected_card = None
+frame_count = 0
 card_rects = []
 
 
@@ -96,8 +99,10 @@ def draw_arena(draw_placable_cells=False, team=1):
                 pygame.draw.rect(screen, (255, 255, 255), rect, 1)
 
 def game_tick():
-    for troop in list(arena.occupancy_grid.values()):
-        troop.move_random_target()
+    # only every N frames
+    if frame_count % tick_rate == 0:
+        for troop in list(arena.occupancy_grid.values()):
+            troop.move_to_tower()
 
 def draw_units():
     for troop in arena.occupancy_grid.values():
@@ -162,6 +167,7 @@ player_2.setup_hand()
 
 # the loop only works for player 1 input for now
 while True:
+    frame_count += 1
     # here we handle pygame events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -203,6 +209,7 @@ while True:
 
                         click_handled = True # in case we add other statments later 
                 
+
 
     screen.fill((0, 0, 0))
     draw_arena(selected_card, team=1)

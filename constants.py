@@ -1,0 +1,5 @@
+
+
+
+EMPTY=0; GRASS=1; WATER=2; BRIDGE=3; TOWER_P1=4; TOWER_P2=5
+walkable_cells = [GRASS, BRIDGE]
