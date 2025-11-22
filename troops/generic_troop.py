@@ -3,7 +3,6 @@ import random
 from constants import *
 from arena.utils.random_utils import calculate_distance, is_cell_in_bounds
 from arena.utils.find_path_bfs import find_path_bfs
-from arena.utils.find_path_bfs_with_range import find_path_bfs_w_range
 
 
 class Troop:
@@ -54,15 +53,17 @@ class Troop:
         # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
         minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop(start_location, occupancy_grid)
-        path = find_path_bfs(self.location, self.arena.grid, {}, cell_type=self.tower_type)
-        distance_from_tower = len(path) # we can use len(path) how distant we are from the tower
-
+        path = find_path_bfs(self.location, self.arena.grid, {}, self, cell_type=self.tower_type)
+        if not path:
+            distance = inf
+        else:
+            distance_from_tower = len(path) # we can use len(path) how distant we are from the tower
 
         if self.attack_range >= minimum_distance_to_troop >= 0 and minimum_distance_to_troop < distance_from_tower:
             # select troop (this also includes the tower)
             self.is_targetting_something = closest_troop
             print("targetting troop", closest_troop.name)
-            path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+            path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
 
         else:
             # we select tower just for walking in that direction, no locking on it. 
@@ -85,6 +86,9 @@ class Troop:
         return minimum_distance, closest_troop
 
     def occupied_cells(self, occupancy_grid={}):
+        if self.location is None or self.arena is None:
+            raise ValueError("Location and arena must be set before calling occupied_cells")
+
         base_row, base_col = self.location # (top left corner)
         for row in range(base_row, base_row + self.height):
             for col in range(base_col, base_col + self.width):
@@ -113,7 +117,7 @@ class Troop:
                 # we overwrite the path to the tower to the one to the troop
                 # if it is still alive then
                 # make sure that the troop is still in range of the troop that it is attacking if not walk there
-                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
         
         moves_this_tick_to_do = self.movement_speed # 1
         moves_this_tick_done = 0
@@ -134,7 +138,7 @@ class Troop:
             
             if not self.arena.move_unit(self, path[moves_this_tick_done + 1]):
                 print("Unit in the way checking again path considering troops")
-                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.tower_type)
+                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.tower_type)
                 moves_this_tick_to_do = moves_this_tick_to_do - moves_this_tick_done
                 moves_this_tick_done = 0
                 continue
@@ -156,7 +160,7 @@ class Troop:
         if  not self.target or self.location == self.target:
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
         
-        path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, goal_cell=self.target)
+        path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, goal_cell=self.target)
         
         if path:
             for path_index in range(1, self.movement_speed + 1):

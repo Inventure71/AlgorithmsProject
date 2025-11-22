@@ -1,7 +1,9 @@
 from collections import deque
 from arena.utils.random_utils import is_walkable
+from arena.utils.random_utils import is_cell_in_bounds
 
-def get_valid_neighbors(cell: (int, int), grid, occupancy_grid, include_non_walkable=False, include_diagonals=False):
+# we modified this function to take into account the width of the troop so that we can check if the path is valid for the troop if it isn't 1 sized
+def get_valid_neighbors(cell: (int, int), grid, occupancy_grid, self_troop, include_non_walkable=False, include_diagonals=False):
     if include_diagonals:
         # these are the 4 directions --> up, down, left, right, top_right, bottom_right, top_right, bottom_left
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1,1), (-1,1), (1,-1)]
@@ -14,17 +16,33 @@ def get_valid_neighbors(cell: (int, int), grid, occupancy_grid, include_non_walk
     for direction in directions:
         row = cell[0] + direction[0]
         col = cell[1] + direction[1]
+
+        all_cells_valid = True
+        for r in range(row, row + self_troop.height):
+            for c in range(col, col + self_troop.width):
+                if not is_cell_in_bounds((r, c), grid):
+                    all_cells_valid = False
+                    break
+                if not is_walkable(r, c, grid) or ((r, c) in occupancy_grid and occupancy_grid[(r, c)] != self_troop):
+                    all_cells_valid = False
+                    break
         
+        if all_cells_valid:
+            neighbors.append((row, col, True))
+
         # we need the include_non_walkable to find path that is 1 away to something unwalkable, es towers
-        if 0 <= row < len(grid) and 0 <= col < len(grid[0]):
-            if is_walkable(row, col, grid) and (row, col) not in occupancy_grid:
-                neighbors.append((row, col, True)) # (row, col, is valid cell to walk on)
-            elif include_non_walkable:
+        if all_cells_valid:
+            neighbors.append((row, col, True)) # (row, col, is valid cell to walk on)
+            
+        elif include_non_walkable:
+            if is_cell_in_bounds((row, col), grid):
                 neighbors.append((row, col, False)) 
+
+
     return neighbors
 
 
-def find_path_bfs(start, grid, occupancy_grid, goal_cell=None, cell_type=None, one_tile_range=True, include_diagonals=True): # one tile range means we are going to check for adiencent impossible to reach points 
+def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_type=None, one_tile_range=True, include_diagonals=True): # one tile range means we are going to check for adiencent impossible to reach points 
     """
     goal_cell = the specific (row, col) of the cell we want to find 
     cell_type = find closest cell of this type and the path to it
@@ -54,7 +72,7 @@ def find_path_bfs(start, grid, occupancy_grid, goal_cell=None, cell_type=None, o
             # found the specific cell that we wanted
             return path
         
-        neighbors = get_valid_neighbors(current_node, grid, occupancy_grid, include_non_walkable=one_tile_range, include_diagonals=include_diagonals)
+        neighbors = get_valid_neighbors(current_node, grid, occupancy_grid, self_troop, include_non_walkable=one_tile_range, include_diagonals=include_diagonals)
 
         # we loop each neighbor
         for neighbor in neighbors:

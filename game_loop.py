@@ -52,6 +52,7 @@ tile_size = None
 selected_card = None
 frame_count = 0
 card_rects = []
+unique_troops = set()
 
 
 def setup_arena():
@@ -102,13 +103,11 @@ def draw_arena(draw_placable_cells=False, team=1):
 def game_tick():
     # only every N frames
     if frame_count % tick_rate == 0:
-        for troop in list(arena.occupancy_grid.values()):
+        for troop in unique_troops:
             troop.move_to_tower()
 
 def draw_units():
     # using the set() to get unique troops (avoid drawing same troop multiple times)
-    unique_troops = set(arena.occupancy_grid.values())
-    
     for troop in unique_troops:
         if troop.location is None:
             continue
@@ -226,6 +225,7 @@ while True:
 
 
     screen.fill((0, 0, 0))
+    unique_troops = set(arena.occupancy_grid.values())
     draw_arena(selected_card, team=1)
     game_tick()
     draw_units()

@@ -151,6 +151,10 @@ class Arena:
         """
         ONLY FOR DEBUGGING WE ARE GOING TO REMOVE THIS LATER AND MAKE IT GOOD
         """
+        # Scale bridge width to match arena size (similar to tower scaling)
+        scaled_bridge_width = int(self.width/18 * bridge_width)
+        scaled_bridge_width = max(1, scaled_bridge_width)  # Ensure minimum width of 1
+        
         # Approximate x-centers of the princess towers (distance_from_left + half width)
         # left: 2 + 1.5 => 3.5/18 of width | right: 13 + 1.5 => 14.5/18 of width
         left_x  = int(self.width * (3.5 / 18.0))
@@ -158,7 +162,7 @@ class Arena:
 
         lower_center = self.height // 2
         river_rows = range(lower_center, lower_center + self.height_of_river)
-        half = bridge_width // 2
+        half = scaled_bridge_width // 2
 
         for y in river_rows:
             for bx in (left_x, right_x):
@@ -167,7 +171,7 @@ class Arena:
                         # Only overwrite river to make visible strips
                         if self.grid[y][x] == 2:
                             self.grid[y][x] = BRIDGE
-
+    
     def mirror_arena(self):
         lower_center = self.height//2 
         print("lower center", lower_center)
@@ -232,15 +236,18 @@ class Arena:
         self.mirror_arena()
     
     """utils"""
-    def is_placable_cell(self, row, col, team):
+    def is_placable_cell(self, row, col, team, moving_troop=None):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
         if not is_walkable(row, col, self.grid):
             return False
-        if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
+        if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
             return False
-        if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
-            return False
+        if not moving_troop: # if we are spawning a troop we need to check if it is in the first half of the arena
+            if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
+                return False
+            if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
+                return False
         
         return True
 
@@ -248,18 +255,26 @@ class Arena:
         if not is_cell_in_bounds(cell, self.grid):
             return False
 
-        if cell in self.occupancy_grid:
-            print("Error cell already occupied")
-            return False
-        
-        if self.grid[cell[0]][cell[1]] in walkable_cells:
-            self.occupancy_grid[cell] = troop
-            troop.location = (cell[0], cell[1])
-            troop.arena = self 
-            return True
+        scaled_width = int(self.width/18*troop.width//2)
+        scaled_height = int(self.height/32*troop.height//2)
+        troop.width = scaled_width
+        troop.height = scaled_height
 
-        print("Not placable cell")
-        return False
+        # so we set the location to the top left corner of the troop and arena in it 
+        troop.location = cell
+        troop.arena = self
+
+        occupied_cells = troop.occupied_cells({})
+        # checking if all the other cells are valid   
+
+        for occupied_cell in occupied_cells:
+            if not self.is_placable_cell(occupied_cell[0], occupied_cell[1], troop.team, moving_troop=troop):
+                return False
+        
+        for occupied_cell in occupied_cells:
+            self.occupancy_grid[occupied_cell] = troop # we set the troop in all the cells it occupies
+        
+        return True
     
     def move_unit(self, troop, new_cell: (int, int)):
         """
@@ -267,26 +282,35 @@ class Arena:
         """
         if not is_cell_in_bounds(new_cell, self.grid):
             return False
-            
-        if new_cell in self.occupancy_grid:
-            # Cell is occupied by another troop
-            return False
+        
+        old_location = troop.location # we save the old location to move it back later
+        troop.location = new_cell  # temporarily set to calculate occupied cells
+        new_occupied_cells = troop.occupied_cells({})
+        troop.location = old_location  # we move it back to the old location
+        
+        for cell in new_occupied_cells:
+            if not self.is_placable_cell(cell[0], cell[1], troop.team, moving_troop=troop):
+                return False
+        
+        old_occupied_cells = troop.occupied_cells({})
 
-        if self.grid[new_cell[0]][new_cell[1]] in walkable_cells:
-            self.occupancy_grid.pop(troop.location)
-            self.occupancy_grid[new_cell] = troop
-            troop.location = new_cell
-            return True
-            
-        else:
-            print("Not in walkable cells so can't move")
-            return False
+        for cell in old_occupied_cells:
+            if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop: # kind of unecessary double check but better be safe
+                self.occupancy_grid.pop(cell)
+
+        troop.location = new_cell # to the new left top corner
+
+        for cell in new_occupied_cells:
+            self.occupancy_grid[cell] = troop # we set the troop in all the cells it occupies
+        
     
+        return True
+
     def remove_unit(self, troop):
         """
         Remove a troop from the occupancy grid (clean up all cells it occupies).
         """
-        occupied_cells = troop.occupied_cells()
+        occupied_cells = troop.occupied_cells({})  # Pass empty dict
         for cell in occupied_cells:
             if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop:
                 self.occupancy_grid.pop(cell)
