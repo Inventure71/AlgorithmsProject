@@ -1,5 +1,6 @@
 from re import I
 from arena.arena import Arena
+from constants import BASE_GRID_HEIGHT, MULTIPLIER_GRID_HEIGHT
 from deck.card import Card
 from deck.deck import Deck
 from player import Player
@@ -16,16 +17,16 @@ colors = {
     9: (200, 100, 100, 100) # transparent red
 }
 
-cards = [Card(name="card1", cost=1, color="red", troop_class=Troop, troop_name="barbarian"), 
-    Card(name="card2", cost=2, color="blue", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card3", cost=3, color="green", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card4", cost=4, color="yellow", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card5", cost=5, color="purple", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card6", cost=6, color="orange", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card7", cost=7, color="red", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card8", cost=8, color="blue", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card9", cost=9, color="green", troop_class=Troop, troop_name="barbarian"),
-    Card(name="card10", cost=10, color="yellow", troop_class=Troop, troop_name="barbarian")]
+cards = [Card(name="barbarian 1", cost=1, color="red", troop_class=Troop, troop_name="barbarian"), 
+    Card(name="barbarian 2", cost=2, color="blue", troop_class=Troop, troop_name="barbarian"),
+    Card(name="barbarian 3", cost=3, color="green", troop_class=Troop, troop_name="barbarian"),
+    Card(name="barbarian 4", cost=4, color="yellow", troop_class=Troop, troop_name="barbarian"),
+    Card(name="barbarian 5", cost=5, color="purple", troop_class=Troop, troop_name="barbarian"),
+    Card(name="archer 1", cost=6, color="orange", troop_class=Troop, troop_name="archer"),
+    Card(name="archer 2", cost=7, color="red", troop_class=Troop, troop_name="archer"),
+    Card(name="archer 3", cost=8, color="blue", troop_class=Troop, troop_name="archer"),
+    Card(name="archer 4", cost=9, color="green", troop_class=Troop, troop_name="archer"),
+    Card(name="archer 5", cost=10, color="yellow", troop_class=Troop, troop_name="archer")]
 
 deck = Deck(cards)
 deck.shuffle_cards()
@@ -33,7 +34,7 @@ deck.shuffle_cards()
 """
 Modifiable variables for the game loop
 """
-rows = int(32*4) #32
+rows = int(BASE_GRID_HEIGHT*MULTIPLIER_GRID_HEIGHT)
 cols = int(rows / 16 * 9)
 draw_borders = True
 hand_area_height = 100
@@ -105,9 +106,22 @@ def game_tick():
             troop.move_to_tower()
 
 def draw_units():
-    for troop in arena.occupancy_grid.values():
-        #TODO: scale the troop up like we do with the rest of the tiles 
-        pygame.draw.rect(screen, troop.color, (troop.location[1] * tile_size , troop.location[0] * tile_size, tile_size, tile_size))
+    # using the set() to get unique troops (avoid drawing same troop multiple times)
+    unique_troops = set(arena.occupancy_grid.values())
+    
+    for troop in unique_troops:
+        if troop.location is None:
+            continue
+            
+        # width and height are already in grid cells, so multiply by tile_size to get pixels
+        width = int(troop.width * tile_size)
+        height = int(troop.height * tile_size)
+        
+        x_pos = int(troop.location[1] * tile_size)
+        y_pos = int(troop.location[0] * tile_size)
+    
+        color = troop.color
+        pygame.draw.rect(screen, color, (x_pos, y_pos, width, height))
 
 def draw_hand(player):
     """Draw the player's hand at the bottom of the screen"""

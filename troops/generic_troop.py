@@ -1,7 +1,7 @@
+from math import inf
 import random
-from tkinter import NO
 from constants import *
-from arena.utils.random_utils import calculate_distance
+from arena.utils.random_utils import calculate_distance, is_cell_in_bounds
 from arena.utils.find_path_bfs import find_path_bfs
 from arena.utils.find_path_bfs_with_range import find_path_bfs_w_range
 
@@ -12,13 +12,13 @@ class Troop:
         name,
         health,
         damage,
-        range,
         movement_speed,
         attack_type,
         attack_speed,
         attack_range,
         attack_cooldown,
-        size,
+        width,
+        height,
         color,
         team,
         location = None,
@@ -27,13 +27,15 @@ class Troop:
         self.name = name
         self.health = health
         self.damage = damage
-        self.range = range
-        self.movement_speed = movement_speed
+        self.movement_speed = int(movement_speed * MULTIPLIER_GRID_HEIGHT)
         self.attack_speed = attack_speed
-        self.attack_range = attack_range
+        self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_cooldown = attack_cooldown
-        self.size = size
         self.team = team
+        self.width = width
+        self.height = height
+
+        self.tower_type = TOWER_P2 if self.team == 1 else TOWER_P1
 
         self.location = location # (row, col)
         self.arena = arena
@@ -41,20 +43,77 @@ class Troop:
         self.color = color
 
         self.is_alive = True
+        self.is_targetting_something = None # Value should be of value Troop, this should be changed when the troop starts attacking something so that it stops moving and doesn't focus on something else
 
 
         """EXP"""
         self.target = None
     
-    def move_to_tower(self):
-        tower_type = TOWER_P2 if self.team == 1 else TOWER_P1
+    """HELPER FUNCTIONS"""
+    def find_closest_target(self, start_location, occupancy_grid):
+        # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
-        self.find_closest_troop(self.arena.occupancy_grid)
+        minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop(start_location, occupancy_grid)
+        path = find_path_bfs(self.location, self.arena.grid, {}, cell_type=self.tower_type)
+        distance_from_tower = len(path) # we can use len(path) how distant we are from the tower
+
+
+        if self.attack_range >= minimum_distance_to_troop >= 0 and minimum_distance_to_troop < distance_from_tower:
+            # select troop (this also includes the tower)
+            self.is_targetting_something = closest_troop
+            print("targetting troop", closest_troop.name)
+            path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+
+        else:
+            # we select tower just for walking in that direction, no locking on it. 
+            self.is_targetting_something = None
+                    
+        return path 
+
+    def find_closest_enemy_troop(self, location, occupancy_grid): # this should only be run if no target is active.
+        closest_troop = None
+        minimum_distance = inf
+        for cell in occupancy_grid: # each cell contains a troop
+            troop = occupancy_grid[cell]
+            if troop.team != self.team and troop.is_alive: # only check for alive troops
+                distance = calculate_distance(location, cell)
+                if distance < minimum_distance:
+                    minimum_distance = distance
+                    closest_troop = troop
+
+        print("closest troop", closest_troop.name if closest_troop else "none", "at distance", minimum_distance)
+        return minimum_distance, closest_troop
+
+    def occupied_cells(self, occupancy_grid={}):
+        base_row, base_col = self.location # (top left corner)
+        for row in range(base_row, base_row + self.height):
+            for col in range(base_col, base_col + self.width):
+                if is_cell_in_bounds((row, col), self.arena.grid):
+                    occupancy_grid[(row, col)] = self
         
-        path = find_path_bfs(self.location, self.arena.grid, {}, cell_type=tower_type)
-        #if not path or len(path) <= 1:
-        #    print("NO PATH FOUND TO TOWER")
-        #    return
+        return occupancy_grid
+
+    """MAIN FUNCTIONS"""
+    def move_to_tower(self):
+        if self.movement_speed == 0:
+            # for example if we have the tower as a troop it wouldn't move
+            return 
+
+        if not self.is_targetting_something:
+            # we first check if something can be targetted
+            # let's see if we can attack something near us
+            path = self.find_closest_target(self.location, self.arena.occupancy_grid) # this will return the path to the option we are going for 
+
+        if self.is_targetting_something: # if we are now targetting something we do this instead of moving torward the towers
+            if not self.is_targetting_something.is_alive:
+                self.is_targetting_something = None
+                path = self.find_closest_target(self.location, self.arena.occupancy_grid)
+        
+            else:
+                # we overwrite the path to the tower to the one to the troop
+                # if it is still alive then
+                # make sure that the troop is still in range of the troop that it is attacking if not walk there
+                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
         
         moves_this_tick_to_do = self.movement_speed # 1
         moves_this_tick_done = 0
@@ -64,19 +123,35 @@ class Troop:
             if not path or next_index >= len(path):
                 print("reached end of path")
                 break
+        
+            if len(path) <= self.attack_range:
+                path = None
+                print("already in range, no need to move")
+                break
+            else:
+                print(len(path), self.attack_range)
             
             
             if not self.arena.move_unit(self, path[moves_this_tick_done + 1]):
                 print("Unit in the way checking again path considering troops")
-                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=tower_type)
+                path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, cell_type=self.tower_type)
                 moves_this_tick_to_do = moves_this_tick_to_do - moves_this_tick_done
                 moves_this_tick_done = 0
                 continue
             else:
                 self.location = path[moves_this_tick_done + 1]
                 moves_this_tick_done += 1
-                        
+    
+    def attack(self, target):
+        pass
 
+    def take_damage(self, damage):
+        if self.health - damage <= 0:
+            self.is_alive = False
+        else:
+            self.health -= damage
+
+    """REMOVABLE"""          
     def move_random_target(self):
         if  not self.target or self.location == self.target:
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
@@ -96,28 +171,5 @@ class Troop:
         else:
             print("NO PATH FOUND")
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-        
-    def find_closest_troop(self, occupancy_grid):
-        for cell in occupancy_grid: # each cell contains a troop
-            troop = occupancy_grid[cell]
-            if troop.team != self.team:
-                print("enemy troop found at distance", calculate_distance(self.location, troop.location))
-            else:
-                print("team troop found at distance", print("enemy troop found at distance", calculate_distance(self.location, troop.location)))
-        
-
-    def find_closest_enemy(self, enemies):
-        # based on self.range see what troops are close
-        pass
-
-    def attack(self, target):
-        pass
-
-    def take_damage(self, damage):
-        if self.health - damage <= 0:
-            self.is_alive = False
-        else:
-            self.health -= damage
-
 
         

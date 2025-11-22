@@ -16,13 +16,14 @@ class Card:
         if troop_name in stats:
             self.troop_health = stats.get(troop_name).get("troop_health")
             self.troop_damage = stats.get(troop_name).get("troop_damage")
-            self.troop_range = stats.get(troop_name).get("troop_range")
             self.troop_movement_speed = stats.get(troop_name).get("troop_movement_speed")
             self.troop_attack_type = stats.get(troop_name).get("troop_attack_type")
             self.troop_attack_speed = stats.get(troop_name).get("troop_attack_speed")
             self.troop_attack_range = stats.get(troop_name).get("troop_attack_range")
             self.troop_attack_cooldown = stats.get(troop_name).get("troop_attack_cooldown")
-            self.troop_size = stats.get(troop_name).get("troop_size")
+            self.troop_width = stats.get(troop_name).get("troop_width")
+            self.troop_height = stats.get(troop_name).get("troop_height")
+
         else:
             raise ValueError(f"Troop {troop_name} not found in stats")
 
@@ -31,13 +32,13 @@ class Card:
             name=self.troop_name, 
             health=self.troop_health, 
             damage=self.troop_damage, 
-            range=self.troop_range, 
             movement_speed=self.troop_movement_speed, 
             attack_type=self.troop_attack_type, 
             attack_speed=self.troop_attack_speed, 
             attack_range=self.troop_attack_range, 
             attack_cooldown=self.troop_attack_cooldown, 
-            size=self.troop_size, 
+            width=self.troop_width, 
+            height=self.troop_height, 
             color=self.color, 
             team=team)
         return self.troop

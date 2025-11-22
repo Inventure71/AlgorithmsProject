@@ -1,6 +1,9 @@
 import random
 from arena.utils.random_utils import is_cell_in_bounds, is_walkable
 from constants import *
+from troops.generic_troop import Troop
+import re
+from arena.utils.random_utils import extract_tower_stats
 
 """
 DONE: we craft only half of the arena and then mirror it to the other half.
@@ -17,8 +20,8 @@ class Arena:
     We are going to do all the logic in cells, the pixel management is done in the visualizer.
     """
     def __init__(self, height): # in pixels == cells? num_cells = width / cell_size
-        # enforce height multiple of 16 
-        if height % 16 != 0:
+        # enforce height multiple of 16 and at least 32
+        if height % 16 != 0 and height >= 32:
             raise ("height of arena needs to be a multiple of 16!!!")
 
         self.height = height
@@ -57,21 +60,52 @@ class Arena:
                 self.grid[i][index] = WATER
 
     def generate_tower(self,  
-        base_size_width = 3,
-        base_size_height = 3,
+        tower_type, # -1, 0, 1 (left, middle, right)
+        team,
         distance_from_left = 3,
         distance_from_bottom = 5
         ):
 
-        scaled_width = int(self.width/18*base_size_width)
-        scaled_height = int(self.height/32*base_size_height)
+        if team == 1:
+            tower_grid_type = TOWER_P1
+        else:
+            tower_grid_type = TOWER_P2
+        
+        # extract base stats
+        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_cooldown, troop_width, troop_height = extract_tower_stats(tower_type)
+        
+        # calculate scaled dimensions (these are the actual grid cell sizes)
+        scaled_width = int(self.width/18*troop_width)
+        scaled_height = int(self.height/32*troop_height)
 
-        bottom_left = (int(self.width/18*distance_from_left), self.height-int(self.height/32*distance_from_bottom) - 1) # from the left, from the top
+        bottom_left = (int(self.width/18*distance_from_left), self.height-int(self.height/32*distance_from_bottom) - 1)
+        top_left = (bottom_left[1]-scaled_height+1, bottom_left[0])
+        
+        # create tower with scaled dimensions (not base dimensions)
+        tower = Troop(
+            name=f"Tower {tower_type}",
+            health=troop_health,
+            damage=troop_damage,
+            movement_speed=troop_movement_speed,
+            attack_type=troop_attack_type,
+            attack_speed=troop_attack_speed,
+            attack_range=troop_attack_range,
+            attack_cooldown=troop_attack_cooldown,
+            width=scaled_width,  
+            height=scaled_height,  
+            color="blue" if team == 1 else "red",
+            team=team,
+            location=top_left,
+            arena=self
+        )
 
+        # place tower in grid and occupancy_grid
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
             for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
-                self.grid[index_row][index_col] = TOWER_P1
-                #print("grid", index_row, index_col)
+                self.grid[index_row][index_col] = tower_grid_type
+                self.occupancy_grid[(index_row, index_col)] = tower
+        
+        return tower  # return the tower for potential use
 
     def generate_towers(self):
         # king tower bottom side
@@ -80,11 +114,9 @@ class Arena:
         # tower is 4x4 (4/18, 4/32)
         # we are searching for bottom left corner
 
-        base_size_width = 4
-        base_size_height = 4
         distance_from_left = 7
         distance_from_bottom = 1
-        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
+        self.generate_tower(0, 1, distance_from_left, distance_from_bottom)
 
 
         # princes towers bottom side
@@ -99,18 +131,14 @@ class Arena:
         # * size is 3x3 (3/32, 3/18)
 
         # princess left
-        base_size_width = 3
-        base_size_height = 3
         distance_from_left = 2
         distance_from_bottom = 5
-        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
+        self.generate_tower(-1, 1, distance_from_left, distance_from_bottom)
 
         # princess right 
-        base_size_width = 3
-        base_size_height = 3
         distance_from_left = 13
         distance_from_bottom = 5
-        self.generate_tower(base_size_width, base_size_height, distance_from_left, distance_from_bottom)
+        self.generate_tower(1, 1, distance_from_left, distance_from_bottom)
     
     def generate_path(self):
         # if passes on water create bridge
@@ -143,11 +171,58 @@ class Arena:
     def mirror_arena(self):
         lower_center = self.height//2 
         print("lower center", lower_center)
+
+        # store towers we've already processed
+        processed_towers = set()
+        
         for row in range(lower_center, self.height):
             for col in range(self.width):
                 if self.grid[row][col] == TOWER_P1:
-                    self.grid[self.height-row-1][col] = TOWER_P2
+                    # get the tower from this cell
+                    tower = self.occupancy_grid.get((row, col))
+                    
+                    if tower and tower not in processed_towers:
+                        processed_towers.add(tower)
+                        
+                        # extract tower type from name
+                        result = re.search(r'Tower\s*(-?\d+)', tower.name)
+                        if result:
+                            tower_type = int(result.group(1))
+                            
+                            # dalculate mirrored position
+                            orig_row, orig_col = tower.location
+                            mirrored_row = self.height - (orig_row + tower.height)
+                            mirrored_col = orig_col
+                            
+                            # create mirrored tower with correct team and color
+                            mirrored_tower = Troop(
+                                name=f"Tower {tower_type}",
+                                health=tower.health,
+                                damage=tower.damage,
+                                movement_speed=0,
+                                attack_type="Ranged",
+                                attack_speed=tower.attack_speed,
+                                attack_range=tower.attack_range,
+                                attack_cooldown=tower.attack_cooldown,
+                                width=tower.width,  
+                                height=tower.height, 
+                                color=(255, 0, 0),
+                                team=2,
+                                location=(mirrored_row, mirrored_col),
+                                arena=self
+                            )
+                            
+                            # place mirrored tower in occupancy_grid for all its cells
+                            for row_offset in range(tower.height):
+                                for col_offset in range(tower.width):
+                                    cell = (mirrored_row + row_offset, mirrored_col + col_offset)
+                                    if is_cell_in_bounds(cell, self.grid):
+                                        self.occupancy_grid[cell] = mirrored_tower
+                                        # mirror also the normal grid cell
+                                        self.grid[cell[0]][cell[1]] = TOWER_P2
+                            
                 else:
+                    # mirror other grid cells
                     self.grid[self.height-row-1][col] = self.grid[row][col]
 
     def world_generation(self):
@@ -206,7 +281,16 @@ class Arena:
         else:
             print("Not in walkable cells so can't move")
             return False
-        
+    
+    def remove_unit(self, troop):
+        """
+        Remove a troop from the occupancy grid (clean up all cells it occupies).
+        """
+        occupied_cells = troop.occupied_cells()
+        for cell in occupied_cells:
+            if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop:
+                self.occupancy_grid.pop(cell)
+        return True
 
 if __name__ == "__main__":
     arena = Arena(1600) 
