@@ -33,12 +33,12 @@ deck.shuffle_cards()
 """
 Modifiable variables for the game loop
 """
-rows = int(32) #32
+rows = int(32*4) #32
 cols = int(rows / 16 * 9)
 draw_borders = True
 hand_area_height = 100
 draw_placable_cells = True
-tick_rate = 10 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
+tick_rate = 1 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
 
 
 """

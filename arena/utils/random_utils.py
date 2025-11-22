@@ -1,4 +1,8 @@
 from constants import *
+import math
+
+def calculate_distance(current_cell, target_cell):
+    return math.sqrt((target_cell[0]-current_cell[0])**2+(target_cell[1]-current_cell[1])**2)
 
 def is_walkable(row, col, grid):
         return grid[row][col] in walkable_cells
