@@ -143,16 +143,7 @@ def draw_units():
             
         # width and height are already in grid cells, so multiply by tile_size to get pixels
         if is_tower:
-            # towers: use actual grid dimensions
-            visual_width = int(troop.width * tile_size)
-            visual_height = int(troop.height * tile_size)
-
-            x_pos = int(troop.location[1] * tile_size)
-            y_pos = int(troop.location[0] * tile_size)
-
-            color = troop.color
-            pygame.draw.rect(screen, color, (x_pos, y_pos, visual_width, visual_height))
-    
+            draw_tower(troop)
         else:
             # regular troops: scale visually but keep grid size as original
             # apply visual scaling based on board scale
@@ -168,7 +159,7 @@ def draw_units():
             image_x = cell_center_x - visual_width // 2
             image_y = cell_center_y - visual_height // 2
 
-            # et scaled sprite from cache
+            # get scaled sprite from cache
             scaled_sprite = troop.get_scaled_sprite(visual_width, visual_height)
             scaled_width, scaled_height = scaled_sprite.get_size()
             
@@ -178,6 +169,92 @@ def draw_units():
             screen.blit(scaled_sprite, (image_x + offset_x, image_y + offset_y))
 
         draw_healthbar(troop)
+
+def draw_tower(troop):
+    """Draw a tower with its assets centered on the tower's grid position."""
+    if not troop.asset_manager or troop.tower_number is None:
+        # Fallback to colored rectangle
+        visual_width = int(troop.width * tile_size)
+        visual_height = int(troop.height * tile_size)
+        x_pos = int(troop.location[1] * tile_size)
+        y_pos = int(troop.location[0] * tile_size)
+        pygame.draw.rect(screen, troop.color, (x_pos, y_pos, visual_width, visual_height))
+        return
+    
+    # Get tower type from tower_number
+    tower_type = troop.tower_number
+    
+    # Get tower assets
+    tower_assets = troop.asset_manager.get_tower_assets(tower_type, troop.team, troop.is_alive)
+    
+    # calculate tower's grid center position (in pixels)
+    # troop.location is (row, col) - top-left corner
+    tower_top_left_x = int(troop.location[1] * tile_size)  # col * tile_size
+    tower_top_left_y = int(troop.location[0] * tile_size)  # row * tile_size
+    tower_width = int(troop.width * tile_size)
+    tower_height = int(troop.height * tile_size)
+    
+    # calculate center of tower's grid area
+    tower_center_x = tower_top_left_x + tower_width // 2
+    tower_center_y = tower_top_left_y + tower_height // 2
+    
+    if not troop.is_alive and tower_assets['destroyed']:
+        # draw destroyed tower sprite (scaled and centered)
+        scaled_destroyed = troop.asset_manager.get_scaled_tower_sprite(
+            tower_assets['destroyed'], 
+            tower_width, 
+            tower_height,
+            tower_type,
+            'destroyed'
+        )
+        scaled_width, scaled_height = scaled_destroyed.get_size()
+        
+        # Center the sprite on the tower's grid center
+        sprite_x = tower_center_x - scaled_width // 2
+        sprite_y = tower_center_y - scaled_height // 2
+        screen.blit(scaled_destroyed, (sprite_x, sprite_y))
+    
+    elif troop.is_alive and tower_assets['building']:
+        # draw building (scaled and centered)
+        scaled_building = troop.asset_manager.get_scaled_tower_sprite(
+            tower_assets['building'], 
+            tower_width, 
+            tower_height,
+            tower_type,
+            'building'
+        )
+        scaled_width, scaled_height = scaled_building.get_size()
+        
+        # center the building sprite on the tower's grid center
+        building_x = tower_center_x - scaled_width // 2 
+        building_y = tower_center_y - scaled_height // 2
+        
+        screen.blit(scaled_building, (building_x, building_y))
+        
+        # Draw character on top (for king tower only)
+        if tower_assets['character']:
+            # character is scaled separately and positioned at top center
+            # use a smaller target size for character (about 40% of tower)
+            char_target_width = int(tower_width * 0.4)
+            char_target_height = int(tower_height * 0.4)
+            
+            scaled_character = troop.asset_manager.get_scaled_tower_sprite(
+                tower_assets['character'],
+                char_target_width,
+                char_target_height,
+                tower_type,
+                'character'
+            )
+            char_scaled_width, char_scaled_height = scaled_character.get_size()
+            
+            # center character horizontally on tower center, position near top
+            char_x = tower_center_x - char_scaled_width // 2
+            # position character at top of tower (10% from top of tower grid)
+            char_y = tower_top_left_y + int(tower_height * 0.1) - char_scaled_height // 2
+            screen.blit(scaled_character, (char_x, char_y))
+    else:
+        # fallback to colored rectangle if assets not loaded
+        pygame.draw.rect(screen, troop.color, (tower_top_left_x, tower_top_left_y, tower_width, tower_height))
 
 def draw_healthbar(troop):
     """Draw a healthbar above a troop or tower"""

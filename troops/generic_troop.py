@@ -50,6 +50,7 @@ class Troop:
         self.is_active = True
         self.is_targetting_something = None # Value should be of value Troop, this should be changed when the troop starts attacking something so that it stops moving and doesn't focus on something else
         self.is_tower = self.name.startswith("Tower") # check if this is a tower (towers need grid cleanup)
+        self.tower_number = int(self.name.split(" ")[1]) if self.is_tower else None
 
         """EXP"""
         self.target = None
@@ -145,6 +146,8 @@ class Troop:
 
     """MAIN FUNCTIONS"""
     def move_to_tower(self, got_blocked=False, steps_done=0):
+        if not self.is_active:
+            return
         
         path = None
 
@@ -176,10 +179,9 @@ class Troop:
             #print("reached objective")
             return
 
-        # Line 172-180 - replace with:
-        # Calculate how many steps needed
-        # Path includes start position, so actual steps = len(path) - 1
-        # We want to stop when within attack_range of target
+        # calculate how many steps needed
+        # path includes start position, so actual steps = len(path) - 1
+        # we want to stop when within attack_range of target
         step_to_do = self.movement_speed - steps_done
         steps_done = 0
 
@@ -216,9 +218,10 @@ class Troop:
     def attack(self):
         if self.is_alive and self.is_active:
             if self.in_process_attack:
-                if (self.arena.frame_count-self.in_process_attack) % self.attack_speed == 0:
+                if (self.arena.frame_count-self.in_process_attack) >= self.attack_speed:
                     self.is_targetting_something.take_damage(self.damage, source_troop=self)
-                    
+                    self.in_process_attack = self.arena.frame_count
+                    return True
             else:
                 self.in_process_attack = self.arena.frame_count
 

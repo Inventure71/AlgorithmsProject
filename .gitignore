@@ -23,3 +23,5 @@ assets/usable_assets/
 assets/__pycache__/
 
 .vscode/
+
+assets/components/__pycache__/
