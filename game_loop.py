@@ -5,6 +5,7 @@ from deck.card import Card
 from deck.deck import Deck
 from player import Player
 from troops.generic_troop import Troop
+from assets.asset_manager import AssetManager
 import pygame
 
 colors = {
@@ -16,20 +17,6 @@ colors = {
     5: (200, 100, 100), # tower p2
     9: (200, 100, 100, 100) # transparent red
 }
-
-cards = [Card(name="barbarian 1", cost=1, color="red", troop_class=Troop, troop_name="barbarian"), 
-    Card(name="barbarian 2", cost=2, color="blue", troop_class=Troop, troop_name="barbarian"),
-    Card(name="barbarian 3", cost=3, color="green", troop_class=Troop, troop_name="barbarian"),
-    Card(name="barbarian 4", cost=4, color="yellow", troop_class=Troop, troop_name="barbarian"),
-    Card(name="barbarian 5", cost=5, color="purple", troop_class=Troop, troop_name="barbarian"),
-    Card(name="archer 1", cost=6, color="orange", troop_class=Troop, troop_name="archer"),
-    Card(name="archer 2", cost=7, color="red", troop_class=Troop, troop_name="archer"),
-    Card(name="archer 3", cost=8, color="blue", troop_class=Troop, troop_name="archer"),
-    Card(name="archer 4", cost=9, color="green", troop_class=Troop, troop_name="archer"),
-    Card(name="archer 5", cost=10, color="yellow", troop_class=Troop, troop_name="archer")]
-
-deck = Deck(cards)
-deck.shuffle_cards()
 
 """
 Modifiable variables for the game loop
@@ -54,12 +41,26 @@ frame_count = 0
 card_rects = []
 arena_background_surface = None
 arena_background_dirty = True
-_font_cache = None
-_card_text_cache = {}  # key = (card_name, card_cost), value = (name_surface, cost_surface)
+asset_manager = AssetManager()
 
+cards = [Card(name="barbarian 1", color="red", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager), 
+    Card(name="barbarian 2", color="blue", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="barbarian 3", color="green", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="barbarian 4", color="yellow", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="barbarian 5", color="purple", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="archer 1", color="orange", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 2", color="red", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 3", color="blue", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 4", color="green", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 5", color="yellow", troop_class=Troop, troop_name="archer", asset_manager=asset_manager)]
+
+deck_p1 = Deck(cards)
+deck_p1.shuffle_cards()
+deck_p2 = Deck(cards)
+deck_p2.shuffle_cards()
 
 def setup_arena():
-    global screen, clock, arena, tile_size
+    global screen, clock, arena, tile_size, asset_manager
     # find optimal tile size
     tile_size = 800/rows # optimal for 32 is 25
 
@@ -69,18 +70,9 @@ def setup_arena():
     clock = pygame.time.Clock()
 
     arena = Arena(rows)
+    arena.asset_manager = asset_manager
     arena.world_generation()
     arena_background_dirty = True
-
-def add_test_troops():
-    global arena
-    location = (10, 2)
-    simple_troop = Troop(name="simple_troop", health=100, damage=1, range=1, movement_speed=1, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=2, location=location, arena=arena)
-    arena.spawn_unit(simple_troop, location)
-
-    location = (rows-10, 2)
-    simple_troop_team_2 = Troop(name="simple_troop", health=100, damage=1, range=1, movement_speed=2, attack_type="melee", attack_speed=1, attack_range=1, attack_cooldown=1, size=1, color=(255, 0, 0), team=1, location=location, arena=arena)
-    arena.spawn_unit(simple_troop_team_2, location)
 
 def draw_arena(draw_placable_cells=False, team=1):
     global arena_background_surface, arena_background_dirty
@@ -177,22 +169,12 @@ def draw_units():
 """FONT"""
 def get_font():
     """Get or create the font object"""
-    global _font_cache
-    if _font_cache is None:
-        _font_cache = pygame.font.Font(None, 24)
-    return _font_cache
+    return asset_manager.get_font(24)
 
 def get_card_text_surfaces(card):
     """Get cached text surfaces for a card"""
-    cache_key = (card.name, card.cost)
-    if cache_key in _card_text_cache:
-        return _card_text_cache[cache_key]
-    
-    font = get_font()
-    name_text = font.render(card.name[:8], True, (0, 0, 0))
-    cost_text = font.render(f"Cost: {card.cost}", True, (0, 0, 0))
-    
-    _card_text_cache[cache_key] = (name_text, cost_text)
+    name_text = asset_manager.get_text_surface(card.name[:8], 24, (0, 0, 0))
+    cost_text = asset_manager.get_text_surface(f"Cost: {card.cost}", 24, (0, 0, 0))
     return name_text, cost_text
 
 """HAND"""
@@ -204,45 +186,76 @@ def draw_hand(player):
     card_width = 80
     card_height = 90
     card_spacing = 10
-    hand_start_y = int(rows * tile_size) + 5  # start just below arena
+    hand_start_y = int(rows * tile_size) + 5
     
-    # calculate starting x to center the hand
     total_width = len(player.hand) * card_width + (len(player.hand) - 1) * card_spacing
     start_x = (int(cols * tile_size) - total_width) // 2
     
-    card_rects = []  # store rects for click detection
+    card_rects = []
     
     for i, card in enumerate(player.hand):
         x = start_x + i * (card_width + card_spacing)
         y = hand_start_y
         
-        # card background
         card_rect = pygame.Rect(x, y, card_width, card_height)
         card_rects.append((card_rect, card))
         
-        # highlight selected card
+        # Highlight selected card
         if card == selected_card:
-            pygame.draw.rect(screen, (255, 255, 0), card_rect, 3)  # yellow border
-            pygame.draw.rect(screen, (100, 100, 100), card_rect)  # darker background
+            pygame.draw.rect(screen, (255, 255, 0), card_rect, 3)
+            pygame.draw.rect(screen, (100, 100, 100), card_rect)
         else:
-            pygame.draw.rect(screen, (150, 150, 150), card_rect)  # gray background
-            pygame.draw.rect(screen, (200, 200, 200), card_rect, 2)  # light border
+            pygame.draw.rect(screen, (150, 150, 150), card_rect)
+            pygame.draw.rect(screen, (200, 200, 200), card_rect, 2)
         
-        # draw card color indicator (top portion)
-        color_rect = pygame.Rect(x, y, card_width, 20)
-        pygame.draw.rect(screen, card.color, color_rect)
+        # Try to load and draw card image
+        card_image = card.get_card_image(card_width, card_height)
+        if card_image:
+            screen.blit(card_image, (x, y))
+        else:
+            # Fallback: draw color indicator if no image
+            color_rect = pygame.Rect(x, y, card_width, 20)
+            pygame.draw.rect(screen, card.color, color_rect)
         
-        # draw card name and cost using cached surfaces
-        name_text, cost_text = get_card_text_surfaces(card)
-        screen.blit(name_text, (x + 5, y + 25))
-        screen.blit(cost_text, (x + 5, y + 50))
+        # Draw card name (optional, commented out)
+        name_text, _ = get_card_text_surfaces(card)
+        # screen.blit(name_text, (x + 5, y + 5))
+        
+        # Draw elixir icon with cost at bottom center of card
+        elixir_icon_size = 20  # Size of the elixir icon
+        elixir_icon = asset_manager.get_elixir_icon(elixir_icon_size)
+        
+        if elixir_icon:
+            # Position icon at bottom center of card
+            icon_x = x + (card_width - elixir_icon_size) // 2  # Center horizontally
+            icon_y = y + card_height - elixir_icon_size - 5  # 5 pixels from bottom
+            
+            # Draw the elixir icon
+            screen.blit(elixir_icon, (icon_x, icon_y))
+            
+            # Draw cost number centered on the icon
+            cost_text = asset_manager.get_text_surface(
+                str(card.cost), 
+                size=16, 
+                color=(255, 255, 255)  # White text
+            )
+            cost_text_width, cost_text_height = cost_text.get_size()
+            
+            # Center the text on the icon
+            text_x = icon_x + (elixir_icon_size - cost_text_width) // 2
+            text_y = icon_y + (elixir_icon_size - cost_text_height) // 2
+            
+            screen.blit(cost_text, (text_x, text_y))
+        else:
+            # Fallback: draw cost text if icon not available
+            _, cost_text = get_card_text_surfaces(card)
+            screen.blit(cost_text, (x + 5, y + card_height - 20))
     
     return card_rects
 
-
 setup_arena()
-player_1 = Player(name="Player 1", deck=deck, team=1, arena=arena)
-player_2 = Player(name="Player 2", deck=deck, team=2, arena=arena)
+player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
+player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
 player_1.setup_hand()
 player_2.setup_hand()
 

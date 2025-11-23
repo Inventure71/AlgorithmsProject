@@ -10,7 +10,8 @@ stats_barbarian = {
     "troop_attack_aggro_range": 5,
     "troop_attack_cooldown": 1, 
     "troop_width": 1,
-    "troop_height": 1
+    "troop_height": 1,
+    "troop_cost": 5,
 }
 
 stats_archer= {
@@ -23,7 +24,8 @@ stats_archer= {
     "troop_attack_aggro_range": 5,
     "troop_attack_cooldown": 1, 
     "troop_width": 1,
-    "troop_height": 1
+    "troop_height": 1,
+    "troop_cost": 2,
 }
 
 stats_tower_small = {
@@ -35,7 +37,8 @@ stats_tower_small = {
     "troop_attack_range": 10, # towers are the only troop that doesn't have an aggro range, they use the troop attack range
     "troop_attack_cooldown": 10,
     "troop_width": 3,
-    "troop_height": 3
+    "troop_height": 3,
+    "troop_cost": 0,
 }
 
 stats_tower_center = {
@@ -46,7 +49,8 @@ stats_tower_center = {
     "troop_attack_range": 10, # towers are the only troop that doesn't have an aggro range, they use the troop attack range
     "troop_attack_cooldown": 10,
     "troop_width": 4,
-    "troop_height": 4
+    "troop_height": 4,
+    "troop_cost": 0,
 }
 
 stats = {

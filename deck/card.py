@@ -3,14 +3,15 @@ from deck.stats import stats
 class Card:
     def __init__(self, 
     name, 
-    cost, 
     color, 
     troop_class,
-    troop_name):
+    troop_name,
+    asset_manager=None):
         self.name = name
-        self.cost = cost
         self.troop_class = troop_class
         self.color = color
+
+        self.asset_manager = asset_manager
 
         self.troop_name = troop_name
         if troop_name in stats:
@@ -24,9 +25,19 @@ class Card:
             self.troop_attack_cooldown = stats.get(troop_name).get("troop_attack_cooldown")
             self.troop_width = stats.get(troop_name).get("troop_width")
             self.troop_height = stats.get(troop_name).get("troop_height")
+            self.cost = stats.get(troop_name).get("troop_cost")
 
         else:
             raise ValueError(f"Troop {troop_name} not found in stats")
+
+    def get_card_image(self, width: int, height: int):
+        """
+        Get the card image scaled to specified dimensions.
+        Returns None if no image is available.
+        """
+        if self.asset_manager:
+            return self.asset_manager.get_scaled_card_image(self.troop_name, width, height)
+        return None
 
     def create_troop(self, team):
         self.troop = self.troop_class(
@@ -42,6 +53,7 @@ class Card:
             width=self.troop_width, 
             height=self.troop_height, 
             color=self.color, 
-            team=team)
+            team=team,
+            asset_manager=self.asset_manager)
         return self.troop
     

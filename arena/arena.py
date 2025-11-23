@@ -47,6 +47,8 @@ class Arena:
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
         self.unique_troops = set()
 
+        self.asset_manager = None
+
     def generate_river(self):
         # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
         # first center found is lower center (between the two even)
@@ -98,7 +100,8 @@ class Arena:
             color="blue" if team == 1 else "red",
             team=team,
             location=top_left,
-            arena=self
+            arena=self,
+            asset_manager=self.asset_manager
         )
 
         self.unique_troops.add(tower)
@@ -191,7 +194,7 @@ class Arena:
                     
                     if tower and tower not in processed_towers:
                         processed_towers.add(tower)
-                        
+
                         # extract tower type from name
                         result = re.search(r'Tower\s*(-?\d+)', tower.name)
                         if result:
@@ -218,7 +221,8 @@ class Arena:
                                 color=(255, 0, 0),
                                 team=2,
                                 location=(mirrored_row, mirrored_col),
-                                arena=self
+                                arena=self,
+                                asset_manager=self.asset_manager
                             )
                             
                             # place mirrored tower in occupancy_grid for all its cells

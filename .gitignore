@@ -18,4 +18,6 @@ troops/__pycache__
 troops/generic_troop.cpython-312.pyc
 troops/troop.cpython-312.pyc
 
-assets/
+assets/game_assets/
+assets/usable_assets/
+assets/__pycache__/

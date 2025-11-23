@@ -1,15 +1,10 @@
 from math import inf
 import os
 import random
-
 import pygame
 from constants import *
 from arena.utils.random_utils import calculate_distance, is_cell_in_bounds
 from arena.utils.find_path_bfs import find_path_bfs
-
-# sprite cache to avoid repeated file I/O
-_sprite_cache = {}
-_scaled_sprite_cache = {}
 
 class Troop:
     def __init__(
@@ -29,6 +24,7 @@ class Troop:
         team,
         location = None,
         arena = None,
+        asset_manager = None,
         ):
         self.name = name
         self.health = health
@@ -51,11 +47,14 @@ class Troop:
 
         self.is_alive = True
         self.is_targetting_something = None # Value should be of value Troop, this should be changed when the troop starts attacking something so that it stops moving and doesn't focus on something else
-        # open pygame surface for the sprite
-        self.sprite = self._load_sprite()
 
         """EXP"""
         self.target = None
+        
+        """ASSET MANAGER"""
+        self.asset_manager = asset_manager
+        # open pygame surface for the sprite
+        self.sprite = self._load_sprite()
     
     """HELPER FUNCTIONS"""
     def find_closest_target(self, start_location, occupancy_grid):
@@ -109,82 +108,29 @@ class Troop:
 
     """SPRITE LOADING"""
     def get_scaled_sprite(self, visual_width, visual_height):
-        """Get a scaled sprite, using cache to avoid repeated scaling operations"""
-        # Calculate the target scaled size
-        sprite_width, sprite_height = self.sprite.get_size()
-        scale_x = visual_width / sprite_width
-        scale_y = visual_height / sprite_height
-        scale = min(scale_x, scale_y)  # Use smaller scale to fit within bounds
-        
-        scaled_width = int(sprite_width * scale)
-        scaled_height = int(sprite_height * scale)
-        
-        # Create cache key
-        cache_key = (id(self.sprite), scaled_width, scaled_height)
-        
-        if cache_key in _scaled_sprite_cache:
-            return _scaled_sprite_cache[cache_key]
-        
-        # Scale and cache
-        scaled_sprite = pygame.transform.scale(self.sprite, (scaled_width, scaled_height))
-        _scaled_sprite_cache[cache_key] = scaled_sprite
-        return scaled_sprite
+        """Get a scaled sprite, using asset manager cache."""
+        if self.asset_manager:
+            return self.asset_manager.get_scaled_sprite(self.sprite, visual_width, visual_height)
+        else:
+            # Fallback if no asset manager provided
+            sprite_width, sprite_height = self.sprite.get_size()
+            scale_x = visual_width / sprite_width
+            scale_y = visual_height / sprite_height
+            scale = min(scale_x, scale_y)
+            scaled_width = int(sprite_width * scale)
+            scaled_height = int(sprite_height * scale)
+            return pygame.transform.scale(self.sprite, (scaled_width, scaled_height))
     
     def _load_sprite(self):
-        """Load a sprite image for this troop, using cache to avoid repeated file I/O"""
-        # Check cache first
-        cache_key = (self.name, self.team)
-        if cache_key in _sprite_cache:
-            return _sprite_cache[cache_key]
-        
-        # Map troop name to asset folder name (match exact case)
-        troop_folder_map = {
-            "barbarian": "barbarian",
-            "archer": "Archer"  # Note: capital A to match folder name
-        }
-        
-        troop_folder = troop_folder_map.get(self.name, None)
-        if not troop_folder:
-            # Fallback to colored surface if troop not found
+        """Load a sprite image for this troop using asset manager."""
+        if self.asset_manager:
+            return self.asset_manager.get_troop_sprite(self.name, self.team)
+        else:
+            # Fallback: create colored surface
             surface = pygame.Surface((self.width, self.height))
             surface.fill(self.color)
-            _sprite_cache[cache_key] = surface
             return surface
-        
-        # Build path to sprite file
-        team_folder = f"Team {self.team}"
-        sprite_path = os.path.join("assets", "usable_assets", troop_folder, team_folder)
-        
-        if not os.path.exists(sprite_path):
-            # Fallback to colored surface if path doesn't exist
-            surface = pygame.Surface((self.width, self.height))
-            surface.fill(self.color)
-            _sprite_cache[cache_key] = surface
-            return surface
-        
-        # Get first PNG file in the directory (or you can specify a specific one)
-        sprite_files = [f for f in os.listdir(sprite_path) if f.endswith('.png')]
-        if not sprite_files:
-            # Fallback to colored surface if no sprites found
-            surface = pygame.Surface((self.width, self.height))
-            surface.fill(self.color)
-            _sprite_cache[cache_key] = surface
-            return surface
-        
-        # Load the first sprite (or you can pick a specific one)
-        sprite_file = os.path.join(sprite_path, sorted(sprite_files)[0])
-        try:
-            sprite = pygame.image.load(sprite_file).convert_alpha()
-            _sprite_cache[cache_key] = sprite
-            return sprite
-        except Exception as e:
-            print(f"Error loading sprite {sprite_file}: {e}")
-            # Fallback to colored surface
-            surface = pygame.Surface((self.width, self.height))
-            surface.fill(self.color)
-            _sprite_cache[cache_key] = surface
-            return surface
-            
+
     """MAIN FUNCTIONS"""
     def move_to_tower(self):
         if self.movement_speed == 0:
