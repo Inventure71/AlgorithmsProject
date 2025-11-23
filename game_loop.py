@@ -1,6 +1,6 @@
 from re import I
 from arena.arena import Arena
-from constants import BASE_GRID_HEIGHT, MULTIPLIER_GRID_HEIGHT
+from constants import *
 from deck.card import Card
 from deck.deck import Deck
 from player import Player
@@ -23,12 +23,7 @@ Modifiable variables for the game loop
 """
 rows = int(BASE_GRID_HEIGHT*MULTIPLIER_GRID_HEIGHT)
 cols = int(rows / 16 * 9)
-draw_borders = True
-hand_area_height = 100
-draw_placable_cells = True
-tick_rate = 1 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
-arena_background_use_image = False
-
+DRAW_PLACABLE_CELLS = True
 
 """
 Global variables for the game loop
@@ -38,7 +33,6 @@ clock = None
 arena = None
 tile_size = None
 selected_card = None
-frame_count = 0
 card_rects = []
 arena_background_surface = None
 arena_background_dirty = True
@@ -61,28 +55,28 @@ deck_p2 = Deck(cards)
 deck_p2.shuffle_cards()
 
 def setup_arena():
-    global screen, clock, arena, tile_size, asset_manager, arena_background_dirty
+    global screen, clock, arena, tile_size, asset_manager
     # find optimal tile size
     tile_size = 800/rows # optimal for 32 is 25
 
     pygame.init()
 
-    screen = pygame.display.set_mode((int(cols * tile_size), int(rows * tile_size) + hand_area_height))
+    screen = pygame.display.set_mode((int(cols * tile_size), int(rows * tile_size) + HAND_AREA_HEIGHT))
     clock = pygame.time.Clock()
 
     arena = Arena(rows)
     arena.asset_manager = asset_manager
     arena.world_generation()
-    arena_background_dirty = True
+    arena.arena_background_dirty = True
 
-def draw_arena(draw_placable_cells=False, team=1):
-    global arena_background_surface, arena_background_dirty
+def draw_arena(DRAW_PLACABLE_CELLS=False, team=1):
+    global arena_background_surface, arena
     
     arena_width = int(cols * tile_size)
     arena_height = int(rows * tile_size)
     
     # Try to load arena background image
-    if arena_background_use_image:
+    if ARENA_BACKGROUND_USE_IMAGE:
         arena_background_image = asset_manager.get_arena_background(arena_width, arena_height)
     else:
         arena_background_image = None
@@ -94,7 +88,7 @@ def draw_arena(draw_placable_cells=False, team=1):
     else:
         # fallback to grid-based background if image not available
         # create or recreate background surface if needed
-        if arena_background_surface is None or arena_background_dirty:
+        if arena_background_surface is None or arena.arena_background_dirty:
             # create a surface for the arena background
             arena_background_surface = pygame.Surface((arena_width, arena_height))
             
@@ -112,17 +106,17 @@ def draw_arena(draw_placable_cells=False, team=1):
                     # fill tile
                     pygame.draw.rect(arena_background_surface, colors[value], rect)
 
-                    if draw_borders:
+                    if DRAW_BORDERS:
                         # draw border (white, thickness 1)
                         pygame.draw.rect(arena_background_surface, (255, 255, 255), rect, 1)
             
-            arena_background_dirty = False
+            arena.arena_background_dirty = False
         
         # blit the cached background to screen
         screen.blit(arena_background_surface, (0, 0))
     
     # only draw placable cells overlay if needed (this changes dynamically)
-    if draw_placable_cells:
+    if DRAW_PLACABLE_CELLS:
         for y, row in enumerate(arena.grid):
             for x, value in enumerate(row):
                 if arena.is_placable_cell(y, x, team=team):
@@ -135,8 +129,8 @@ def draw_arena(draw_placable_cells=False, team=1):
 
 def game_tick():
     # only every N frames
-    if frame_count % tick_rate == 0:
-        for troop in arena.unique_troops:
+    if arena.frame_count % TICK_RATE == 0:
+        for troop in list(arena.unique_troops):
             troop.move_to_tower()
 
 def draw_units():
@@ -167,8 +161,9 @@ def draw_units():
             visual_width = int(troop.width * visual_scale_x * tile_size)
             visual_height = int(troop.height * visual_scale_y * tile_size)
 
-            cell_center_x = int((troop.location[1] + 0.5) * tile_size)  # col + 0.5 for center
-            cell_center_y = int((troop.location[0] + 0.5) * tile_size)  # row + 0.5 for center
+            # FIX: Calculate center correctly for multi-cell troops
+            cell_center_x = int((troop.location[1] + troop.width / 2.0) * tile_size)  # col + width/2 for center
+            cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)  # row + height/2 for center
 
             image_x = cell_center_x - visual_width // 2
             image_y = cell_center_y - visual_height // 2
@@ -181,7 +176,66 @@ def draw_units():
             offset_x = (visual_width - scaled_width) // 2
             offset_y = (visual_height - scaled_height) // 2
             screen.blit(scaled_sprite, (image_x + offset_x, image_y + offset_y))
+
+        draw_healthbar(troop)
+
+def draw_healthbar(troop):
+    """Draw a healthbar above a troop or tower"""
+    if not troop.is_alive or troop.location is None:
+        return
+    
+    # calculate health percentage
+    if not hasattr(troop, 'max_health') or troop.max_health <= 0:
+        health_percentage = 1.0  # default to full if max_health not set
+    else:
+        health_percentage = max(0.0, min(1.0, troop.health / troop.max_health))
+    
+    is_tower = troop.name.startswith("Tower")
+    
+    # calculate position based on unit type
+    if is_tower:
+        # towers: position at top of tower
+        visual_width = int(troop.width * tile_size)
+        x_pos = int(troop.location[1] * tile_size)
+        y_pos = int(troop.location[0] * tile_size)
+        bar_y = y_pos - 8  # 8 pixels above the tower (TODO: make this a variable)
+    else:
+        # regular troops: position above the sprite
+        visual_scale_x = arena.width / 18.0 * 2
+        visual_scale_y = arena.height / 32.0 * 2
+        visual_width = int(troop.width * visual_scale_x * tile_size)
+        visual_height = int(troop.height * visual_scale_y * tile_size)
         
+        cell_center_x = int((troop.location[1] + troop.width / 2.0) * tile_size)
+        cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)
+        
+        image_y = cell_center_y - visual_height // 2
+        bar_y = image_y - 8  # 8 pixels above the sprite (TODO: make this a variable)
+        x_pos = cell_center_x - visual_width // 2
+    
+    # healthbar dimensions
+    bar_width = max(30, visual_width * 0.8)  # 80% of unit width, minimum 30px
+    bar_height = 4
+    bar_x = x_pos + (visual_width - bar_width) / 2  # center the bar
+    
+    # draw background (dark red/black)
+    pygame.draw.rect(screen, (50, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+    
+    # draw health bar (green to red gradient based on health)
+    if health_percentage > 0.6:
+        health_color = (0, 255, 0)  # green
+    elif health_percentage > 0.3:
+        health_color = (255, 255, 0)  # yellow
+    else:
+        health_color = (255, 0, 0)  # red
+    
+    health_width = int(bar_width * health_percentage)
+    if health_width > 0:
+        pygame.draw.rect(screen, health_color, (bar_x, bar_y, health_width, bar_height))
+    
+    # draw border
+    pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 1)  
+
 """FONT"""
 def get_font():
     """Get or create the font object"""
@@ -269,6 +323,59 @@ def draw_hand(player):
     
     return card_rects
 
+"""DEBUG FUNCTIONS"""
+def draw_attack_ranges():
+    """Draw semi-transparent attack range circles for all troops"""
+    if not arena:
+        return
+    
+    # Create a surface with per-pixel alpha for transparency
+    for troop in arena.unique_troops:
+        if troop.location is None or not troop.is_alive or not troop.is_active:
+            continue
+        
+        # get troop center position in pixels
+        # troop.location is (row, col)
+        cell_center_x = int((troop.location[1] + troop.width / 2.0) * tile_size)  # col + width/2 for center
+        cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)  # row + height/2 for center
+       
+        
+        # convert attack_range from grid cells to pixels
+        attack_range_pixels = int(troop.attack_range * tile_size)
+        
+        # create a surface for the circle with alpha
+        # make it slightly larger than the range for visibility
+        circle_surface = pygame.Surface((attack_range_pixels * 2 + 10, attack_range_pixels * 2 + 10), pygame.SRCALPHA)
+        
+        # draw semi-transparent circle (RGBA: red with 50% opacity)
+        # use different colors for different teams
+        if troop.team == 1:
+            color = (255, 0, 0, 80)  # red, semi-transparent
+        else:
+            color = (0, 0, 255, 80)  # blue, semi-transparent
+        
+        # draw circle centered on the surface
+        center_x = attack_range_pixels + 5
+        center_y = attack_range_pixels + 5
+        pygame.draw.circle(circle_surface, color, (center_x, center_y), attack_range_pixels, 2)  # 2 pixel border
+        
+        # also draw a filled circle with lower opacity for area visualization
+        fill_color = (color[0], color[1], color[2], 30)  # even more transparent
+        pygame.draw.circle(circle_surface, fill_color, (center_x, center_y), attack_range_pixels)
+        
+        # blit the circle surface to screen, offset by the center position
+        screen.blit(circle_surface, (cell_center_x - center_x, cell_center_y - center_y))
+        
+        # optional: draw aggro range as well (outer circle)
+        if hasattr(troop, 'attack_aggro_range') and troop.attack_aggro_range > troop.attack_range:
+            aggro_range_pixels = int(troop.attack_aggro_range * tile_size)
+            aggro_surface = pygame.Surface((aggro_range_pixels * 2 + 10, aggro_range_pixels * 2 + 10), pygame.SRCALPHA)
+            aggro_color = (255, 255, 0, 60)  # yellow, semi-transparent for aggro range
+            aggro_center_x = aggro_range_pixels + 5
+            aggro_center_y = aggro_range_pixels + 5
+            pygame.draw.circle(aggro_surface, aggro_color, (aggro_center_x, aggro_center_y), aggro_range_pixels, 1)
+            screen.blit(aggro_surface, (cell_center_x - aggro_center_x, cell_center_y - aggro_center_y))
+
 setup_arena()
 player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
 player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
@@ -278,7 +385,7 @@ player_2.setup_hand()
 
 # the loop only works for player 1 input for now
 while True:
-    frame_count += 1
+    arena.frame_count += 1
     # here we handle pygame events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -321,13 +428,15 @@ while True:
 
                         click_handled = True # in case we add other statments later 
                 
-    if frame_count % 100 == 0 and selected_card is not None:
+    if arena.frame_count % 100 == 0 and selected_card is not None:
         player_2.place_troop((0, 0), selected_card)
 
     screen.fill((0, 0, 0))
     draw_arena(selected_card, team=1)
     game_tick()
     draw_units()
+    if DRAW_ATTACK_RANGES_DEBUG:
+        draw_attack_ranges()
 
     card_rects = draw_hand(player_1)
     pygame.display.flip()

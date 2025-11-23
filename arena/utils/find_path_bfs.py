@@ -84,11 +84,11 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
                 
                 if one_tile_range:
                     if (cell_type and grid[neighbor[0]][neighbor[1]] == cell_type):
-                        return path
+                        return path + [neighbor] 
                     if goal_cell and (neighbor[0], neighbor[1]) == goal_cell:
-                        return path
+                        return path + [neighbor] 
                     if neighbor in occupancy_grid and occupancy_grid[neighbor] == cell_type:
-                        return path
+                        return path + [neighbor]
                 
                 # so that we don't visit it in the future
                 if is_valid:

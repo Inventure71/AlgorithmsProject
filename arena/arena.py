@@ -46,8 +46,10 @@ class Arena:
         """POST GENERATION"""
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
         self.unique_troops = set()
+        self.frame_count = 0
 
         self.asset_manager = None
+        self.arena_background_dirty = True
 
     def generate_river(self):
         # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
@@ -103,6 +105,8 @@ class Arena:
             arena=self,
             asset_manager=self.asset_manager
         )
+        if tower_type == 0: # deactivate the middle tower 
+            tower.is_active = False
 
         self.unique_troops.add(tower)
 
@@ -213,8 +217,8 @@ class Arena:
                                 movement_speed=0,
                                 attack_type="Ranged",
                                 attack_speed=tower.attack_speed,
-                                attack_range=tower.attack_range,
-                                attack_aggro_range=tower.attack_aggro_range,
+                                attack_range=int(tower.attack_range/MULTIPLIER_GRID_HEIGHT),
+                                attack_aggro_range=int(tower.attack_aggro_range/MULTIPLIER_GRID_HEIGHT),
                                 attack_cooldown=tower.attack_cooldown,
                                 width=tower.width,  
                                 height=tower.height, 
@@ -224,6 +228,8 @@ class Arena:
                                 arena=self,
                                 asset_manager=self.asset_manager
                             )
+                            if tower_type == 0: # deactivate the middle tower in the mirrored tower
+                                mirrored_tower.is_active = False
                             
                             # place mirrored tower in occupancy_grid for all its cells
                             for row_offset in range(tower.height):
@@ -332,10 +338,37 @@ class Arena:
         Remove a troop from the occupancy grid (clean up all cells it occupies).
         """
         self.unique_troops.remove(troop)
-        occupied_cells = troop.occupied_cells({})  # Pass empty dict
+        occupied_cells = troop.occupied_cells({})
         for cell in occupied_cells:
             if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop:
                 self.occupancy_grid.pop(cell)
+        return True
+    
+    def remove_tower(self, tower_troop):
+        """
+        Remove a tower from the occupancy grid (clean up all cells it occupies).
+        """
+        for troop in self.unique_troops:
+            if troop.name.startswith("Tower"):
+                if troop.team == tower_troop.team and troop.is_active == False and troop.is_alive:
+                    troop.is_active = True
+
+        self.unique_troops.discard(tower_troop)
+        occupied_cells = tower_troop.occupied_cells({})
+        
+        for cell in occupied_cells:
+            # clean up occupancy_grid
+            if cell in self.occupancy_grid and self.occupancy_grid[cell] == tower_troop:
+                self.occupancy_grid.pop(cell)
+            
+            # clean up grid for towers
+            row, col = cell
+            if is_cell_in_bounds(cell, self.grid):
+                # reset tower cells back to GRASS
+                if self.grid[row][col] in [TOWER_P1, TOWER_P2]:
+                    self.grid[row][col] = GRASS
+        
+        self.arena_background_dirty = True
         return True
 
 if __name__ == "__main__":

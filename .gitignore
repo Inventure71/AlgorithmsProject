@@ -21,3 +21,5 @@ troops/troop.cpython-312.pyc
 assets/game_assets/
 assets/usable_assets/
 assets/__pycache__/
+
+.vscode/
