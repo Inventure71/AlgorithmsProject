@@ -26,10 +26,11 @@ def extract_tower_stats(tower_type):
         troop_attack_type = stats_tower_small.get("troop_attack_type")
         troop_attack_speed = stats_tower_small.get("troop_attack_speed")
         troop_attack_range = stats_tower_small.get("troop_attack_range")
+        troop_attack_aggro_range = stats_tower_center.get("troop_attack_range")
         troop_attack_cooldown = stats_tower_small.get("troop_attack_cooldown")
         troop_width = stats_tower_small.get("troop_width")
         troop_height = stats_tower_small.get("troop_height")
-        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_cooldown, troop_width, troop_height
+        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height
     else:
         troop_health = stats_tower_center.get("troop_health")
         troop_damage = stats_tower_center.get("troop_damage")
@@ -37,7 +38,8 @@ def extract_tower_stats(tower_type):
         troop_attack_type = stats_tower_center.get("troop_attack_type")
         troop_attack_speed = stats_tower_center.get("troop_attack_speed")
         troop_attack_range = stats_tower_center.get("troop_attack_range")
+        troop_attack_aggro_range = stats_tower_center.get("troop_attack_range")
         troop_attack_cooldown = stats_tower_center.get("troop_attack_cooldown")
         troop_width = stats_tower_center.get("troop_width")
         troop_height = stats_tower_center.get("troop_height")
-        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_cooldown, troop_width, troop_height
+        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height

@@ -14,7 +14,8 @@ class Player:
 
     def place_troop(self, location, card):
         troop = card.create_troop(self.team)
-        self.arena.spawn_unit(troop, location)
+        if not self.arena.spawn_unit(troop, location):
+            return False
 
         # use my custom linear search to find the card index
         index = linear_search(self.hand, card)
@@ -23,6 +24,7 @@ class Player:
             self.hand.pop(index)
         self.deck.add_card(card)
         self.draw_card()
+        return True
 
     def draw_card(self):
         if len(self.hand) < self.max_hand_size:

@@ -52,7 +52,10 @@ tile_size = None
 selected_card = None
 frame_count = 0
 card_rects = []
-unique_troops = set()
+arena_background_surface = None
+arena_background_dirty = True
+_font_cache = None
+_card_text_cache = {}  # key = (card_name, card_cost), value = (name_surface, cost_surface)
 
 
 def setup_arena():
@@ -67,6 +70,7 @@ def setup_arena():
 
     arena = Arena(rows)
     arena.world_generation()
+    arena_background_dirty = True
 
 def add_test_troops():
     global arena
@@ -79,49 +83,119 @@ def add_test_troops():
     arena.spawn_unit(simple_troop_team_2, location)
 
 def draw_arena(draw_placable_cells=False, team=1):
-    for y, row in enumerate(arena.grid):
-        for x, value in enumerate(row):
-            # Calculate precise pixel coordinates to avoid gaps due to float truncation
-            x_pos = int(x * tile_size)
-            y_pos = int(y * tile_size)
-            width = int((x + 1) * tile_size) - x_pos
-            height = int((y + 1) * tile_size) - y_pos
+    global arena_background_surface, arena_background_dirty
+    
+    # create or recreate background surface if needed
+    if arena_background_surface is None or arena_background_dirty:
+        # create a surface for the arena background
+        arena_background_surface = pygame.Surface((int(cols * tile_size), int(rows * tile_size)))
+        
+        # draw static grid elements to the cached surface
+        for y, row in enumerate(arena.grid):
+            for x, value in enumerate(row):
+                # calculate precise pixel coordinates to avoid gaps due to float truncation
+                x_pos = int(x * tile_size)
+                y_pos = int(y * tile_size)
+                width = int((x + 1) * tile_size) - x_pos
+                height = int((y + 1) * tile_size) - y_pos
 
-            rect = pygame.Rect(x_pos, y_pos, width, height)
-            color = colors[value]                    
-            
-            # Fill tile
-            pygame.draw.rect(screen, colors[value], rect)
-            if draw_placable_cells:
-                if arena.is_placable_cell(y, x, team=1):
+                rect = pygame.Rect(x_pos, y_pos, width, height)
+                
+                # fill tile
+                pygame.draw.rect(arena_background_surface, colors[value], rect)
+
+                if draw_borders:
+                    # draw border (white, thickness 1)
+                    pygame.draw.rect(arena_background_surface, (255, 255, 255), rect, 1)
+        
+        arena_background_dirty = False
+    
+    # Blit the cached background to screen
+    screen.blit(arena_background_surface, (0, 0))
+    
+    # Only draw placable cells overlay if needed (this changes dynamically)
+    if draw_placable_cells:
+        for y, row in enumerate(arena.grid):
+            for x, value in enumerate(row):
+                if arena.is_placable_cell(y, x, team=team):
+                    x_pos = int(x * tile_size)
+                    y_pos = int(y * tile_size)
+                    width = int((x + 1) * tile_size) - x_pos
+                    height = int((y + 1) * tile_size) - y_pos
+                    rect = pygame.Rect(x_pos, y_pos, width, height)
                     pygame.draw.rect(screen, colors[9], rect)
-
-            if draw_borders:
-                # Draw border (white, thickness 1)
-                pygame.draw.rect(screen, (255, 255, 255), rect, 1)
 
 def game_tick():
     # only every N frames
     if frame_count % tick_rate == 0:
-        for troop in unique_troops:
+        for troop in arena.unique_troops:
             troop.move_to_tower()
 
 def draw_units():
     # using the set() to get unique troops (avoid drawing same troop multiple times)
-    for troop in unique_troops:
+    for troop in arena.unique_troops:
         if troop.location is None:
             continue
+
+        is_tower = troop.name.startswith("Tower")
             
         # width and height are already in grid cells, so multiply by tile_size to get pixels
-        width = int(troop.width * tile_size)
-        height = int(troop.height * tile_size)
-        
-        x_pos = int(troop.location[1] * tile_size)
-        y_pos = int(troop.location[0] * tile_size)
-    
-        color = troop.color
-        pygame.draw.rect(screen, color, (x_pos, y_pos, width, height))
+        if is_tower:
+            # towers: use actual grid dimensions
+            visual_width = int(troop.width * tile_size)
+            visual_height = int(troop.height * tile_size)
 
+            x_pos = int(troop.location[1] * tile_size)
+            y_pos = int(troop.location[0] * tile_size)
+
+            color = troop.color
+            pygame.draw.rect(screen, color, (x_pos, y_pos, visual_width, visual_height))
+    
+        else:
+            # regular troops: scale visually but keep grid size as original
+            # apply visual scaling based on board scale
+            visual_scale_x = arena.width / 18.0 * 2
+            visual_scale_y = arena.height / 32.0 * 2
+            visual_width = int(troop.width * visual_scale_x * tile_size)
+            visual_height = int(troop.height * visual_scale_y * tile_size)
+
+            cell_center_x = int((troop.location[1] + 0.5) * tile_size)  # col + 0.5 for center
+            cell_center_y = int((troop.location[0] + 0.5) * tile_size)  # row + 0.5 for center
+
+            image_x = cell_center_x - visual_width // 2
+            image_y = cell_center_y - visual_height // 2
+
+            # et scaled sprite from cache
+            scaled_sprite = troop.get_scaled_sprite(visual_width, visual_height)
+            scaled_width, scaled_height = scaled_sprite.get_size()
+            
+            # center the scaled sprite
+            offset_x = (visual_width - scaled_width) // 2
+            offset_y = (visual_height - scaled_height) // 2
+            screen.blit(scaled_sprite, (image_x + offset_x, image_y + offset_y))
+        
+"""FONT"""
+def get_font():
+    """Get or create the font object"""
+    global _font_cache
+    if _font_cache is None:
+        _font_cache = pygame.font.Font(None, 24)
+    return _font_cache
+
+def get_card_text_surfaces(card):
+    """Get cached text surfaces for a card"""
+    cache_key = (card.name, card.cost)
+    if cache_key in _card_text_cache:
+        return _card_text_cache[cache_key]
+    
+    font = get_font()
+    name_text = font.render(card.name[:8], True, (0, 0, 0))
+    cost_text = font.render(f"Cost: {card.cost}", True, (0, 0, 0))
+    
+    _card_text_cache[cache_key] = (name_text, cost_text)
+    return name_text, cost_text
+
+"""HAND"""
 def draw_hand(player):
     """Draw the player's hand at the bottom of the screen"""
     if not player.hand:
@@ -130,42 +204,37 @@ def draw_hand(player):
     card_width = 80
     card_height = 90
     card_spacing = 10
-    hand_start_y = int(rows * tile_size) + 5  # Start just below arena
+    hand_start_y = int(rows * tile_size) + 5  # start just below arena
     
-    # Calculate starting x to center the hand
+    # calculate starting x to center the hand
     total_width = len(player.hand) * card_width + (len(player.hand) - 1) * card_spacing
     start_x = (int(cols * tile_size) - total_width) // 2
     
-    card_rects = []  # Store rects for click detection
+    card_rects = []  # store rects for click detection
     
     for i, card in enumerate(player.hand):
         x = start_x + i * (card_width + card_spacing)
         y = hand_start_y
         
-        # Card background
+        # card background
         card_rect = pygame.Rect(x, y, card_width, card_height)
         card_rects.append((card_rect, card))
         
-        # Highlight selected card
+        # highlight selected card
         if card == selected_card:
-            pygame.draw.rect(screen, (255, 255, 0), card_rect, 3)  # Yellow border
-            pygame.draw.rect(screen, (100, 100, 100), card_rect)  # Darker background
+            pygame.draw.rect(screen, (255, 255, 0), card_rect, 3)  # yellow border
+            pygame.draw.rect(screen, (100, 100, 100), card_rect)  # darker background
         else:
-            pygame.draw.rect(screen, (150, 150, 150), card_rect)  # Gray background
-            pygame.draw.rect(screen, (200, 200, 200), card_rect, 2)  # Light border
+            pygame.draw.rect(screen, (150, 150, 150), card_rect)  # gray background
+            pygame.draw.rect(screen, (200, 200, 200), card_rect, 2)  # light border
         
-        # Draw card color indicator (top portion)
+        # draw card color indicator (top portion)
         color_rect = pygame.Rect(x, y, card_width, 20)
         pygame.draw.rect(screen, card.color, color_rect)
         
-        # Draw card name (simple text - you may want to use pygame.font for better text)
-        # For now, just show first letter or use a simple representation
-        font = pygame.font.Font(None, 24)
-        name_text = font.render(card.name[:8], True, (0, 0, 0))  # Truncate long names
+        # draw card name and cost using cached surfaces
+        name_text, cost_text = get_card_text_surfaces(card)
         screen.blit(name_text, (x + 5, y + 25))
-        
-        # Draw cost
-        cost_text = font.render(f"Cost: {card.cost}", True, (0, 0, 0))
         screen.blit(cost_text, (x + 5, y + 50))
     
     return card_rects
@@ -215,17 +284,18 @@ while True:
                         print(f"Placing troop at {clicked_row}, {clicked_col}")
                         
                         # player 
-                        player_1.place_troop((clicked_row, clicked_col), selected_card)
+                        if not player_1.place_troop((clicked_row, clicked_col), selected_card):
+                            continue
                         
                         # deselect after playing
                         selected_card = None
 
                         click_handled = True # in case we add other statments later 
                 
-
+    if frame_count % 100 == 0 and selected_card is not None:
+        player_2.place_troop((0, 0), selected_card)
 
     screen.fill((0, 0, 0))
-    unique_troops = set(arena.occupancy_grid.values())
     draw_arena(selected_card, team=1)
     game_tick()
     draw_units()

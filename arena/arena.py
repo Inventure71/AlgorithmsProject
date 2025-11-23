@@ -45,6 +45,7 @@ class Arena:
 
         """POST GENERATION"""
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
+        self.unique_troops = set()
 
     def generate_river(self):
         # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
@@ -72,7 +73,7 @@ class Arena:
             tower_grid_type = TOWER_P2
         
         # extract base stats
-        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_cooldown, troop_width, troop_height = extract_tower_stats(tower_type)
+        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height = extract_tower_stats(tower_type)
         
         # calculate scaled dimensions (these are the actual grid cell sizes)
         scaled_width = int(self.width/18*troop_width)
@@ -90,6 +91,7 @@ class Arena:
             attack_type=troop_attack_type,
             attack_speed=troop_attack_speed,
             attack_range=troop_attack_range,
+            attack_aggro_range=troop_attack_aggro_range,
             attack_cooldown=troop_attack_cooldown,
             width=scaled_width,  
             height=scaled_height,  
@@ -98,6 +100,8 @@ class Arena:
             location=top_left,
             arena=self
         )
+
+        self.unique_troops.add(tower)
 
         # place tower in grid and occupancy_grid
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
@@ -207,6 +211,7 @@ class Arena:
                                 attack_type="Ranged",
                                 attack_speed=tower.attack_speed,
                                 attack_range=tower.attack_range,
+                                attack_aggro_range=tower.attack_aggro_range,
                                 attack_cooldown=tower.attack_cooldown,
                                 width=tower.width,  
                                 height=tower.height, 
@@ -225,6 +230,8 @@ class Arena:
                                         # mirror also the normal grid cell
                                         self.grid[cell[0]][cell[1]] = TOWER_P2
                             
+                            self.unique_troops.add(mirrored_tower)
+                            
                 else:
                     # mirror other grid cells
                     self.grid[self.height-row-1][col] = self.grid[row][col]
@@ -236,6 +243,15 @@ class Arena:
         self.mirror_arena()
     
     """utils"""
+    def is_movable_cell(self, row, col, moving_troop=None):
+        if not is_cell_in_bounds((row, col), self.grid):
+            return False
+        if not is_walkable(row, col, self.grid):
+            return False
+        if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
+            return False
+        return True
+    
     def is_placable_cell(self, row, col, team, moving_troop=None):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
@@ -243,11 +259,10 @@ class Arena:
             return False
         if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
             return False
-        if not moving_troop: # if we are spawning a troop we need to check if it is in the first half of the arena
-            if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
-                return False
-            if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
-                return False
+        if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
+            return False
+        if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
+            return False
         
         return True
 
@@ -255,10 +270,11 @@ class Arena:
         if not is_cell_in_bounds(cell, self.grid):
             return False
 
-        scaled_width = int(self.width/18*troop.width//2)
-        scaled_height = int(self.height/32*troop.height//2)
-        troop.width = scaled_width
-        troop.height = scaled_height
+        #scaled_width = max(1, int(self.width/18*troop.width//2))
+        #scaled_height = max(1, int(self.height/32*troop.height//2))
+    
+        #troop.width = scaled_width
+        #troop.height = scaled_height
 
         # so we set the location to the top left corner of the troop and arena in it 
         troop.location = cell
@@ -274,6 +290,7 @@ class Arena:
         for occupied_cell in occupied_cells:
             self.occupancy_grid[occupied_cell] = troop # we set the troop in all the cells it occupies
         
+        self.unique_troops.add(troop)
         return True
     
     def move_unit(self, troop, new_cell: (int, int)):
@@ -289,7 +306,7 @@ class Arena:
         troop.location = old_location  # we move it back to the old location
         
         for cell in new_occupied_cells:
-            if not self.is_placable_cell(cell[0], cell[1], troop.team, moving_troop=troop):
+            if not self.is_movable_cell(cell[0], cell[1], moving_troop=troop):
                 return False
         
         old_occupied_cells = troop.occupied_cells({})
@@ -310,6 +327,7 @@ class Arena:
         """
         Remove a troop from the occupancy grid (clean up all cells it occupies).
         """
+        self.unique_troops.remove(troop)
         occupied_cells = troop.occupied_cells({})  # Pass empty dict
         for cell in occupied_cells:
             if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop:

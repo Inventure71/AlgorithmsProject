@@ -26,9 +26,6 @@ def get_valid_neighbors(cell: (int, int), grid, occupancy_grid, self_troop, incl
                 if not is_walkable(r, c, grid) or ((r, c) in occupancy_grid and occupancy_grid[(r, c)] != self_troop):
                     all_cells_valid = False
                     break
-        
-        if all_cells_valid:
-            neighbors.append((row, col, True))
 
         # we need the include_non_walkable to find path that is 1 away to something unwalkable, es towers
         if all_cells_valid:
@@ -71,6 +68,9 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
         elif goal_cell and (current_node[0], current_node[1]) == goal_cell:
             # found the specific cell that we wanted
             return path
+        elif (current_node[0], current_node[1]) in occupancy_grid and occupancy_grid[(current_node[0], current_node[1])] == cell_type:
+            # found a troop
+            return path
         
         neighbors = get_valid_neighbors(current_node, grid, occupancy_grid, self_troop, include_non_walkable=one_tile_range, include_diagonals=include_diagonals)
 
@@ -86,6 +86,8 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
                     if (cell_type and grid[neighbor[0]][neighbor[1]] == cell_type):
                         return path
                     if goal_cell and (neighbor[0], neighbor[1]) == goal_cell:
+                        return path
+                    if neighbor in occupancy_grid and occupancy_grid[neighbor] == cell_type:
                         return path
                 
                 # so that we don't visit it in the future
