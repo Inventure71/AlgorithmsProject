@@ -154,7 +154,7 @@ class Arena:
         # we need to connect the two princess towers to the king tower
         # then we connect the princess towers (the middle) to the river (and over it)
 
-    def generate_mock_bridges(self, bridge_width=3):
+    def generate_mock_bridges(self, bridge_width=1):
         """
         ONLY FOR DEBUGGING WE ARE GOING TO REMOVE THIS LATER AND MAKE IT GOOD
         """

@@ -27,6 +27,7 @@ draw_borders = True
 hand_area_height = 100
 draw_placable_cells = True
 tick_rate = 1 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
+arena_background_use_image = False
 
 
 """
@@ -60,7 +61,7 @@ deck_p2 = Deck(cards)
 deck_p2.shuffle_cards()
 
 def setup_arena():
-    global screen, clock, arena, tile_size, asset_manager
+    global screen, clock, arena, tile_size, asset_manager, arena_background_dirty
     # find optimal tile size
     tile_size = 800/rows # optimal for 32 is 25
 
@@ -77,35 +78,50 @@ def setup_arena():
 def draw_arena(draw_placable_cells=False, team=1):
     global arena_background_surface, arena_background_dirty
     
-    # create or recreate background surface if needed
-    if arena_background_surface is None or arena_background_dirty:
-        # create a surface for the arena background
-        arena_background_surface = pygame.Surface((int(cols * tile_size), int(rows * tile_size)))
-        
-        # draw static grid elements to the cached surface
-        for y, row in enumerate(arena.grid):
-            for x, value in enumerate(row):
-                # calculate precise pixel coordinates to avoid gaps due to float truncation
-                x_pos = int(x * tile_size)
-                y_pos = int(y * tile_size)
-                width = int((x + 1) * tile_size) - x_pos
-                height = int((y + 1) * tile_size) - y_pos
-
-                rect = pygame.Rect(x_pos, y_pos, width, height)
-                
-                # fill tile
-                pygame.draw.rect(arena_background_surface, colors[value], rect)
-
-                if draw_borders:
-                    # draw border (white, thickness 1)
-                    pygame.draw.rect(arena_background_surface, (255, 255, 255), rect, 1)
-        
-        arena_background_dirty = False
+    arena_width = int(cols * tile_size)
+    arena_height = int(rows * tile_size)
     
-    # Blit the cached background to screen
-    screen.blit(arena_background_surface, (0, 0))
+    # Try to load arena background image
+    if arena_background_use_image:
+        arena_background_image = asset_manager.get_arena_background(arena_width, arena_height)
+    else:
+        arena_background_image = None
+
+    if arena_background_image:
+        # use background image instead of grid
+        # blit the background image directly to screen (no caching needed as it's already cached in asset_manager)
+        screen.blit(arena_background_image, (0, 0))
+    else:
+        # fallback to grid-based background if image not available
+        # create or recreate background surface if needed
+        if arena_background_surface is None or arena_background_dirty:
+            # create a surface for the arena background
+            arena_background_surface = pygame.Surface((arena_width, arena_height))
+            
+            # draw static grid elements to the cached surface
+            for y, row in enumerate(arena.grid):
+                for x, value in enumerate(row):
+                    # calculate precise pixel coordinates to avoid gaps due to float truncation
+                    x_pos = int(x * tile_size)
+                    y_pos = int(y * tile_size)
+                    width = int((x + 1) * tile_size) - x_pos
+                    height = int((y + 1) * tile_size) - y_pos
+
+                    rect = pygame.Rect(x_pos, y_pos, width, height)
+                    
+                    # fill tile
+                    pygame.draw.rect(arena_background_surface, colors[value], rect)
+
+                    if draw_borders:
+                        # draw border (white, thickness 1)
+                        pygame.draw.rect(arena_background_surface, (255, 255, 255), rect, 1)
+            
+            arena_background_dirty = False
+        
+        # blit the cached background to screen
+        screen.blit(arena_background_surface, (0, 0))
     
-    # Only draw placable cells overlay if needed (this changes dynamically)
+    # only draw placable cells overlay if needed (this changes dynamically)
     if draw_placable_cells:
         for y, row in enumerate(arena.grid):
             for x, value in enumerate(row):

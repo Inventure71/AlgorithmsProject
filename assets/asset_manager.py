@@ -26,6 +26,31 @@ class AssetManager:
             "barbarian": "barbarian",
             "archer": "Archer"
         }
+    
+    def get_arena_background(self, width: int, height: int) -> Optional[pygame.Surface]:
+        """
+        Load and scale the arena background image to fit the specified dimensions.
+        Returns None if background image doesn't exist.
+        """
+        cache_key = ("arena_background", width, height)
+        if cache_key in self._scaled_card_cache:  # Reuse card cache for arena background
+            return self._scaled_card_cache[cache_key]
+        
+        # Build path to arena background
+        background_path = os.path.join(self.usable_assets_path, "arena", "background.png")
+        
+        if not os.path.exists(background_path):
+            return None
+        
+        try:
+            background_image = pygame.image.load(background_path).convert()
+            # Scale to fit the arena dimensions exactly
+            scaled_background = pygame.transform.scale(background_image, (width, height))
+            self._scaled_card_cache[cache_key] = scaled_background
+            return scaled_background
+        except Exception as e:
+            print(f"Error loading arena background {background_path}: {e}")
+            return None
 
     def get_elixir_icon(self, size: int = 20) -> Optional[pygame.Surface]:
         """
