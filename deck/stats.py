@@ -12,6 +12,8 @@ stats_barbarian = {
     "troop_width": 1,
     "troop_height": 1,
     "troop_cost": 5,
+    "troop_count": 4,
+    "scale_multiplier": 0.5,
 }
 
 stats_archer= {
@@ -26,6 +28,8 @@ stats_archer= {
     "troop_width": 1,
     "troop_height": 1,
     "troop_cost": 2,
+    "troop_count": 2,
+    "scale_multiplier": 0.5,
 }
 
 stats_tower_small = {

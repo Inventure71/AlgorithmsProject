@@ -13,9 +13,25 @@ class Player:
         self.hand = []
 
     def place_troop(self, location, card):
-        troop = card.create_troop(self.team)
-        if not self.arena.spawn_unit(troop, location):
-            return False
+        #troop = card.create_troop(self.team)
+        troops = card.create_troops(self.team)
+
+        if len(troops) == 1:
+            print(f"Spawning {troops[0].name} at {location}")
+            if not self.arena.spawn_unit(troops[0], location):
+                return False
+        else:
+            print(f"Spawning {len(troops)} troops at {location}")
+            formation_positions = card.get_formation_positions(location, len(troops), enforce_valid=True, arena=self.arena, team=self.team)
+
+            if len(formation_positions) == 0:
+                print(f"No valid formation positions for {card.name}")
+                return False
+            
+            for index, position in enumerate(formation_positions):
+                if not self.arena.spawn_unit(troops[index], position):
+                    print("Strange failure spawning troops")
+                    return False
 
         # use my custom linear search to find the card index
         index = linear_search(self.hand, card)

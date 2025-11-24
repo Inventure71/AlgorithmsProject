@@ -25,12 +25,13 @@ class Troop:
         location = None,
         arena = None,
         asset_manager = None,
+        scale_multiplier = 1,
         ):
         self.name = name
         self.health = health
         self.max_health = health
         self.damage = damage
-        self.movement_speed = int(movement_speed * MULTIPLIER_GRID_HEIGHT)
+        self.movement_speed = int(movement_speed * MULTIPLIER_GRID_HEIGHT // 2)
         self.attack_speed = attack_speed
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
@@ -58,6 +59,7 @@ class Troop:
         
         """ASSET MANAGER"""
         self.asset_manager = asset_manager
+        self.scale_multiplier = scale_multiplier
         # open pygame surface for the sprite
         self.sprite = self._load_sprite()
     
@@ -170,8 +172,8 @@ class Troop:
                     path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
                     print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
                 else:
-                    if self.movement_speed != 0:
-                        print(f"{self.name} already in range, no need to move, Attacking")
+                    #if self.movement_speed != 0:
+                        #print(f"{self.name} already in range, no need to move, Attacking")
                     path = None
                     self.attack()
     

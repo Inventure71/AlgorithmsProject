@@ -149,24 +149,25 @@ def draw_units():
             # apply visual scaling based on board scale
             visual_scale_x = arena.width / 18.0 * 2
             visual_scale_y = arena.height / 32.0 * 2
-            visual_width = int(troop.width * visual_scale_x * tile_size)
-            visual_height = int(troop.height * visual_scale_y * tile_size)
+            base_visual_width = int(troop.width * visual_scale_x * tile_size)
+            base_visual_height = int(troop.height * visual_scale_y * tile_size)
+            
+            # apply scale_multiplier for uniform scaling in all directions
+            visual_width = int(base_visual_width * troop.scale_multiplier)
+            visual_height = int(base_visual_height * troop.scale_multiplier)
 
-            # FIX: Calculate center correctly for multi-cell troops
+            # calculate the center of the troop for multi-cell troops
             cell_center_x = int((troop.location[1] + troop.width / 2.0) * tile_size)  # col + width/2 for center
             cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)  # row + height/2 for center
 
             image_x = cell_center_x - visual_width // 2
             image_y = cell_center_y - visual_height // 2
 
-            # get scaled sprite from cache
+            # get scaled sprite from cache - now scales to exact dimensions uniformly
             scaled_sprite = troop.get_scaled_sprite(visual_width, visual_height)
-            scaled_width, scaled_height = scaled_sprite.get_size()
             
-            # center the scaled sprite
-            offset_x = (visual_width - scaled_width) // 2
-            offset_y = (visual_height - scaled_height) // 2
-            screen.blit(scaled_sprite, (image_x + offset_x, image_y + offset_y))
+            # draw the sprite at the calculated position (no offset needed since it fills the area)
+            screen.blit(scaled_sprite, (image_x, image_y))
 
         draw_healthbar(troop)
 

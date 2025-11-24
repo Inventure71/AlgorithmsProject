@@ -29,22 +29,19 @@ class SpriteManager(CacheManager):
         return sprite
     
     def get_scaled_sprite(self, sprite: pygame.Surface, width: int, height: int) -> pygame.Surface:
-        """Get a scaled version of a sprite."""
-        sprite_width, sprite_height = sprite.get_size()
-        scale = min(width / sprite_width, height / sprite_height)
-        
-        scaled_width = int(sprite_width * scale)
-        scaled_height = int(sprite_height * scale)
-        
-        cache_key = (id(sprite), scaled_width, scaled_height)
+        """Get a scaled version of a sprite with uniform scaling to fill the entire area."""
+        # scale uniformly to exact target dimensions (no aspect ratio preservation)
+        # this ensures all troops fill their designated area consistently
+        cache_key = (id(sprite), width, height)
         
         if cache_key in self._scaled_cache:
             return self._scaled_cache[cache_key]
         
-        scaled_sprite = pygame.transform.scale(sprite, (scaled_width, scaled_height))
+        # scale to exact dimensions for uniform filling
+        scaled_sprite = pygame.transform.scale(sprite, (width, height))
         self._scaled_cache[cache_key] = scaled_sprite
         return scaled_sprite
-    
+
     def _load_sprite(self, troop_name: str, team: int) -> pygame.Surface:
         """Internal method to load sprite from disk."""
         troop_folder = self.troop_folder_map.get(troop_name.lower())
