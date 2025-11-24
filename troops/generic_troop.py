@@ -26,6 +26,8 @@ class Troop:
         arena = None,
         asset_manager = None,
         scale_multiplier = 1,
+        troop_type = None,
+        troop_favorite_target = "any",
         ):
         self.name = name
         self.health = health
@@ -35,6 +37,10 @@ class Troop:
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
         self.attack_cooldown = attack_cooldown
+
+        self.troop_type = troop_type
+        self.troop_favorite_target = troop_favorite_target
+        
         self.team = team
         self.width = width
         self.height = height
@@ -69,10 +75,10 @@ class Troop:
         self.movement_accumulator = 0.0
     
     """HELPER FUNCTIONS"""
-    def find_closest_target(self, start_location, occupancy_grid, got_blocked=False):
+    def find_closest_target(self, occupancy_grid, got_blocked=False):
         # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
-        minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop(start_location, occupancy_grid)
+        minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop(occupancy_grid)
         # path to the tower (we ignore troops here)
         if got_blocked: # means we got blocked by a troop so we need to path considering the troops
             path = find_path_bfs(self.location, self.arena.grid, occupancy_grid, self, cell_type=self.tower_type)
@@ -91,7 +97,7 @@ class Troop:
                     
         return path 
 
-    def find_closest_enemy_troop(self, location, occupancy_grid): # this should only be run if no target is active.
+    def find_closest_enemy_troop(self, occupancy_grid): # this should only be run if no target is active.
         closest_troop = None
         minimum_distance = inf
         
@@ -101,6 +107,9 @@ class Troop:
             troop = occupancy_grid[cell]
             # skip if already checked, same team, or dead
             if troop in checked_troops or troop.team == self.team or not troop.is_alive:
+                continue
+            if self.troop_favorite_target != "any" and troop.troop_type != self.troop_favorite_target:
+                # we only target the favourite target types
                 continue
             
             checked_troops.add(troop)
@@ -161,12 +170,12 @@ class Troop:
         if not self.is_targetting_something:
             # we first check if something can be targetted
             # let's see if we can attack something near us
-            path = self.find_closest_target(self.location, self.arena.occupancy_grid, got_blocked=got_blocked) # this will return the path to the option we are going for 
+            path = self.find_closest_target(self.arena.occupancy_grid, got_blocked=got_blocked) # this will return the path to the option we are going for 
 
         if self.is_targetting_something: # if we are now targetting something we do this instead of moving torward the towers
             if not self.is_targetting_something.is_alive:
                 self.is_targetting_something = None
-                path = self.find_closest_target(self.location, self.arena.occupancy_grid)
+                path = self.find_closest_target(self.arena.occupancy_grid)
         
             else:
                 # we overwrite the path to the tower to the one to the troop

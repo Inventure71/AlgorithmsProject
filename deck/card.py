@@ -29,7 +29,8 @@ class Card:
             self.cost = stats.get(troop_name).get("troop_cost")
             self.troop_count = stats.get(troop_name).get("troop_count")
             self.scale_multiplier = stats.get(troop_name).get("scale_multiplier")
-
+            self.troop_type = stats.get(troop_name).get("troop_type")
+            self.troop_favorite_target = stats.get(troop_name).get("troop_favorite_target")
         else:
             raise ValueError(f"Troop {troop_name} not found in stats")
 
@@ -63,7 +64,9 @@ class Card:
                 color=self.color, 
                 team=team,
                 asset_manager=self.asset_manager,
-                scale_multiplier=self.scale_multiplier)
+                scale_multiplier=self.scale_multiplier,
+                troop_type=self.troop_type,
+                troop_favorite_target=self.troop_favorite_target)
             )
         return troops
 

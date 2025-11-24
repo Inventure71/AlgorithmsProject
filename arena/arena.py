@@ -77,7 +77,7 @@ class Arena:
             tower_grid_type = TOWER_P2
         
         # extract base stats
-        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height = extract_tower_stats(tower_type)
+        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target = extract_tower_stats(tower_type)
         
         # calculate scaled dimensions (these are the actual grid cell sizes)
         scaled_width = int(self.width/18*troop_width)
@@ -103,13 +103,15 @@ class Arena:
             team=team,
             location=top_left,
             arena=self,
-            asset_manager=self.asset_manager
+            asset_manager=self.asset_manager,
+            troop_type=troop_type,
+            troop_favorite_target=troop_favorite_target
         )
         if tower_type == 0: # deactivate the middle tower 
             tower.is_active = False
 
         self.unique_troops.add(tower)
-        
+
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
             for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
         
@@ -222,7 +224,9 @@ class Arena:
                         team=2,
                         location=(mirrored_row, mirrored_col),
                         arena=self,
-                        asset_manager=self.asset_manager
+                        asset_manager=self.asset_manager,
+                        troop_type=tower.troop_type,
+                        troop_favorite_target=tower.troop_favorite_target
                     )
                     if tower_type == 0:
                         mirrored_tower.is_active = False
