@@ -1,3 +1,4 @@
+from UI.finish_battle_screen import FinishBattleScreen
 from arena.arena import Arena
 from constants import *
 from deck.card import Card
@@ -28,6 +29,7 @@ DRAW_PLACABLE_CELLS = True
 """
 Global variables for the game loop
 """
+looping = True
 screen = None
 clock = None
 arena = None
@@ -38,22 +40,6 @@ time_location = None
 arena_background_surface = None
 arena_background_dirty = True
 asset_manager = AssetManager()
-
-cards = [
-    Card(name="barbarian 1", color="red", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager), 
-    Card(name="barbarian 2", color="blue", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
-    Card(name="barbarian 3", color="green", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
-    Card(name="archer 1", color="orange", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
-    Card(name="archer 2", color="red", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
-    Card(name="archer 3", color="blue", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
-    Card(name="giant 1", color="yellow", troop_class=Troop, troop_name="giant", asset_manager=asset_manager),
-    Card(name="giant 2", color="green", troop_class=Troop, troop_name="giant", asset_manager=asset_manager)
-    ]
-
-deck_p1 = Deck(cards)
-deck_p1.shuffle_cards()
-deck_p2 = Deck(cards)
-deck_p2.shuffle_cards()
 
 def setup_arena():
     global screen, clock, arena, tile_size, asset_manager, time_location
@@ -318,9 +304,9 @@ def draw_healthbar(troop):
     pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 1)  
 
 """FONT"""
-def get_font():
+def get_font(font_size=24):
     """Get or create the font object"""
-    return asset_manager.get_font(24)
+    return asset_manager.get_font(font_size)
 
 def get_card_text_surfaces(card):
     """Get cached text surfaces for a card"""
@@ -521,94 +507,145 @@ def draw_attack_ranges():
             pygame.draw.circle(aggro_surface, aggro_color, (aggro_center_x, aggro_center_y), aggro_range_pixels, 1)
             screen.blit(aggro_surface, (cell_center_x - aggro_center_x, cell_center_y - aggro_center_y))
 
-setup_arena()
-player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
-player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
-player_1.setup_hand()
-player_2.setup_hand()
+"""GAME LOOP"""
+while looping: # bigger loop for the game loop
+
+    cards = [
+    Card(name="barbarian 1", color="red", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager), 
+    Card(name="barbarian 2", color="blue", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="barbarian 3", color="green", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
+    Card(name="archer 1", color="orange", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 2", color="red", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="archer 3", color="blue", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
+    Card(name="giant 1", color="yellow", troop_class=Troop, troop_name="giant", asset_manager=asset_manager),
+    Card(name="giant 2", color="green", troop_class=Troop, troop_name="giant", asset_manager=asset_manager)
+    ]
+
+    deck_p1 = Deck(cards)
+    deck_p1.shuffle_cards()
+    deck_p2 = Deck(cards)
+    deck_p2.shuffle_cards()
+
+    finish_battle_screen = None
+    setup_arena()
+    player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
+    player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
+    player_1.setup_hand()
+    player_2.setup_hand()
 
 
-# the loop only works for player 1 input for now
-while True:
-    if not arena.tick():
-        print("Match over")
-        break
+    # the loop only works for player 1 input for now
+    while True:
+        if not arena.tick():
+            print("Match over")
+            break
 
-    # here we handle pygame events
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-        
-        # left click
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1: # left Mouse Button
-                mouse_pos = pygame.mouse.get_pos() # get position on screen
-                click_handled = False
+        # here we handle pygame events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            
+            # left click
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # left Mouse Button
+                    mouse_pos = pygame.mouse.get_pos() # get position on screen
+                    click_handled = False
 
-                for rect, card in card_rects:
-                    if rect.collidepoint(mouse_pos):
-                        if selected_card == card:
-                            selected_card = None
-                            print(f"De selected: {card.name}")
-                        else:
-                            if card.cost <= player_1.current_elixir:
-                                selected_card = card
-                                print(f"Selected: {card.name}")
+                    for rect, card in card_rects:
+                        if rect.collidepoint(mouse_pos):
+                            if selected_card == card:
+                                selected_card = None
+                                print(f"De selected: {card.name}")
                             else:
-                                print(f"Not enough elixir to select: {card.name}")
-                        
-                        click_handled = True
-                        break # found the event, stop searching
-                
-                if not click_handled and selected_card is not None: # which means not in the cards area and we have a selected card
-                    # we convert to the grid, but now we need to check if it is in that grid
-                    clicked_row = int(mouse_pos[1] // tile_size)
-                    clicked_col = int(mouse_pos[0] // tile_size)
+                                if card.cost <= player_1.current_elixir:
+                                    selected_card = card
+                                    print(f"Selected: {card.name}")
+                                else:
+                                    print(f"Not enough elixir to select: {card.name}")
+                            
+                            click_handled = True
+                            break # found the event, stop searching
+                    
+                    if not click_handled and selected_card is not None: # which means not in the cards area and we have a selected card
+                        # we convert to the grid, but now we need to check if it is in that grid
+                        clicked_row = int(mouse_pos[1] // tile_size)
+                        clicked_col = int(mouse_pos[0] // tile_size)
 
-                    # check boundaries 
-                    if arena.is_placable_cell(clicked_row, clicked_col, 1):
-                        print(f"Trying to place troop at {clicked_row}, {clicked_col}")
-                        
-                        # player 
-                        if not player_1.place_troop((clicked_row, clicked_col), selected_card):
-                            continue
-                        
-                        # deselect after playing
-                        selected_card = None
+                        # check boundaries 
+                        if arena.is_placable_cell(clicked_row, clicked_col, 1):
+                            print(f"Trying to place troop at {clicked_row}, {clicked_col}")
+                            
+                            # player 
+                            if not player_1.place_troop((clicked_row, clicked_col), selected_card):
+                                continue
+                            
+                            # deselect after playing
+                            selected_card = None
 
-                        click_handled = True # in case we add other statments later 
-                
-    if arena.frame_count % 100 == 0 and selected_card is not None:
-        player_2.place_troop((3, 3), selected_card)
+                            click_handled = True # in case we add other statments later 
+                    
+        if arena.frame_count % 100 == 0 and selected_card is not None:
+            player_2.place_troop((3, 3), selected_card)
 
 
-    player_1.increase_elixir()    
-    player_2.increase_elixir()
+        player_1.increase_elixir()    
+        player_2.increase_elixir()
 
-    screen.fill((66, 49, 22))
-    draw_arena(selected_card, team=1)
-    game_tick()
-    draw_units()
+        screen.fill((66, 49, 22))
+        draw_arena(selected_card, team=1)
+        game_tick()
+        draw_units()
 
-    if DRAW_ATTACK_RANGES_DEBUG:
-        draw_attack_ranges()
+        if DRAW_ATTACK_RANGES_DEBUG:
+            draw_attack_ranges()
 
-    card_rects = draw_hand(player_1)
+        card_rects = draw_hand(player_1)
 
-    font = get_font()
-    fps_surface = font.render(f"FPS: {clock.get_fps():.1f}", True, (255, 255, 255))
-    screen.blit(fps_surface, (10, 10))
+        font = get_font(30)
+        fps_surface = font.render(f"FPS: {clock.get_fps():.1f}", True, (255, 255, 255))
+        screen.blit(fps_surface, (10, 10))
 
-    """TIME LEFT"""
-    time_left_surface = font.render(f"{(arena.time_left//arena.one_minute)}:{((arena.time_left%arena.one_minute)//TICKS_PER_SECOND):02d}", True, (255, 255, 255))
-    screen.blit(time_left_surface, time_location)
+        """TIME LEFT"""
+        time_left_surface = font.render(f"{(arena.time_left//arena.one_minute)}:{((arena.time_left%arena.one_minute)//TICKS_PER_SECOND):02d}", True, (255, 255, 255))
+        screen.blit(time_left_surface, time_location)
+        
+        """ELIXIR MULTIPLIER"""
+        if arena.elixir_multiplier != 1:
+            draw_elixir_icon(time_location[0], time_location[1] + 20, 40, f"x{arena.elixir_multiplier:.1f}")
+
+        pygame.display.flip()
+        clock.tick(TICKS_PER_SECOND+1) # we add 1 to have a bit of a margin, sometimes it goes a bit slow
     
-    """ELIXIR MULTIPLIER"""
-    if arena.elixir_multiplier != 1:
-        draw_elixir_icon(time_location[0], time_location[1] + 20, 40, f"x{arena.elixir_multiplier:.1f}")
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    mouse_pos = pygame.mouse.get_pos()
+                    for button in finish_battle_screen.buttons:
+                        button.is_clicked(mouse_pos)
 
-    pygame.display.flip()
-    clock.tick(TICKS_PER_SECOND+1) # we add 1 to have a bit of a margin, sometimes it goes a bit slow
- 
+        print("Match over")
+        draw_arena(selected_card, team=1)
+        draw_units()
+
+        if finish_battle_screen is None:
+            finish_battle_screen = FinishBattleScreen(arena, asset_manager, screen)
+
+        if finish_battle_screen.restart_clicked:
+            break
+        
+        if finish_battle_screen.main_menu_clicked:
+            looping = False
+            break
+
+        finish_battle_screen.draw()
+        pygame.display.flip()
+
+        clock.tick(TICKS_PER_SECOND+1)
+
 pygame.quit()
+exit()

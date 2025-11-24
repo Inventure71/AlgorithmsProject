@@ -58,6 +58,9 @@ class Arena:
 
         self.elixir_multiplier = 1.0
 
+        # remove 
+        self.time_left = 120
+
     def generate_river(self):
         # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
         # first center found is lower center (between the two even)

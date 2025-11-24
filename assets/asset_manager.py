@@ -41,6 +41,14 @@ class AssetManager:
         """Scale tower sprite (delegates to TowerAssetManager)."""
         return self.towers.get_scaled_tower_sprite(sprite, width, height, tower_type, layer)
     
+    def get_crown_image(self, crown_team: str, size: int):
+        """Get card image (delegates to UIAssetManager)."""
+        return self.ui.get_crown_image(crown_team, size)
+
+    def get_winner_screen(self, width: int, height: int):
+        """Get winner screen (delegates to UIAssetManager)."""
+        return self.ui.get_winner_screen(width, height)
+
     def get_card_image(self, troop_name: str):
         """Get card image (delegates to UIAssetManager)."""
         return self.ui.get_card_image(troop_name)

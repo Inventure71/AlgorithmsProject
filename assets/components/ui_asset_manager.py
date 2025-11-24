@@ -67,6 +67,44 @@ class UIAssetManager(CacheManager):
         
         return None
     
+    def get_winner_screen(self, width: int, height: int) -> Optional[pygame.Surface]:
+        """Load winner image"""
+        cache_key = ("winner_screen", width, height)
+
+        if cache_key in self._scaled_cache:
+            return self._scaled_cache[cache_key]
+        
+        winner_path = os.path.join(self.assets_path, "UI", "WinnerScreen.png")
+        winner = self._load_image(winner_path)
+        if winner:
+            scaled = pygame.transform.scale(winner, (width, height))
+            self._scaled_cache[cache_key] = scaled
+            return scaled
+        
+        return None
+
+    def get_crown_image(self, crown_team: int, size) -> Optional[pygame.Surface]:
+        """Load crown image for a team."""
+        cache_key = (crown_team, size, size)
+
+        if cache_key in self._scaled_cache:
+            return self._scaled_cache[cache_key]
+
+        if crown_team == 1:
+            crown_path = os.path.join(self.assets_path, "UI", "crown_t1.png")
+        elif crown_team == 2:
+            crown_path = os.path.join(self.assets_path, "UI", "crown_t2.png")
+        else:
+            return None
+        
+        crown = self._load_image(crown_path)
+        if crown:
+            scaled = pygame.transform.scale(crown, (size, size))
+            self._scaled_cache[cache_key] = scaled
+            return scaled
+        
+        return None
+
     def get_elixir_icon(self, size: int = 20) -> Optional[pygame.Surface]:
         """Load elixir icon at specified size."""
         cache_key = ("elixir", size, size)
@@ -117,8 +155,6 @@ class UIAssetManager(CacheManager):
         
         self._segment_cache[cache_key] = segments
         return segments
-
-
 
     def _load_image(self, path: str, convert_alpha: bool = True) -> Optional[pygame.Surface]:
         """Helper to load a single image."""
