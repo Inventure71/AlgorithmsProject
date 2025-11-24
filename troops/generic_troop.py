@@ -31,7 +31,6 @@ class Troop:
         self.health = health
         self.max_health = health
         self.damage = damage
-        self.movement_speed = int(movement_speed * MULTIPLIER_GRID_HEIGHT // 2)
         self.attack_speed = attack_speed
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
@@ -62,6 +61,10 @@ class Troop:
         self.scale_multiplier = scale_multiplier
         # open pygame surface for the sprite
         self.sprite = self._load_sprite()
+
+        """MOVEMENT"""
+        self.raw_movement_speed = movement_speed
+        self.movement_accumulator = 0.0
     
     """HELPER FUNCTIONS"""
     def find_closest_target(self, start_location, occupancy_grid, got_blocked=False):
@@ -147,7 +150,7 @@ class Troop:
             return surface
 
     """MAIN FUNCTIONS"""
-    def move_to_tower(self, got_blocked=False, steps_done=0):
+    def move_to_tower(self, got_blocked=False):
         if not self.is_active:
             return
         
@@ -168,7 +171,7 @@ class Troop:
                 # if it is still alive then
                 # make sure that the troop is still in range of the troop that it is attacking if not walk there
                 if not is_in_attack_range(self, self.is_targetting_something):
-                    print(f"{self.name} not in range, finding path to troop")
+                    print(f"{self.name} not in range, finding pabth to troop")
                     path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
                     print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
                 else:
@@ -176,25 +179,28 @@ class Troop:
                         #print(f"{self.name} already in range, no need to move, Attacking")
                     path = None
                     self.attack()
-    
+
+        if self.raw_movement_speed == 0:
+            return 
+
         if not path:
             #print("reached objective")
             return
 
+        if not got_blocked:
+            self.movement_accumulator += self.raw_movement_speed
+        
+        if self.movement_accumulator < 1:
+            return 
+
         # calculate how many steps needed
         # path includes start position, so actual steps = len(path) - 1
         # we want to stop when within attack_range of target
-        step_to_do = self.movement_speed - steps_done
         steps_done = 0
+        print(f"{self.name} has accumulated {self.movement_accumulator} steps")
+        self.in_process_attack = None
 
-        if step_to_do <= 0:
-            #print("already in range, no need to move")
-            return
-        else:
-            print(f"{self.name} in theory wants to move {step_to_do} steps")
-            self.in_process_attack = None # reset the attack in process flag
-
-        while steps_done < step_to_do:
+        while self.movement_accumulator >= 1.0:
             # start from index 1 not 0 so we avoid the same cell 
             steps_done = steps_done + 1 
 
@@ -210,12 +216,14 @@ class Troop:
             if not self.arena.move_unit(self, path[steps_done]):
                 print("Unit in the way checking again path considering troops")  
                 
-                self.move_to_tower(got_blocked=True, steps_done=steps_done - 1)
+                self.move_to_tower(got_blocked=True)
                 return
 
             else:
+                self.movement_accumulator -= 1.0 # we moved so we need to consume it
                 print(f"{self.name} moves to {path[steps_done]}")
                 self.location = path[steps_done]
+    
     
     def attack(self):
         if self.is_alive and self.is_active:
@@ -250,7 +258,7 @@ class Troop:
         path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, goal_cell=self.target)
         
         if path:
-            for path_index in range(1, self.movement_speed + 1):
+            for path_index in range(1, int(self.raw_movement_speed) + 1):
                 if path_index < len(path):
                     if not self.arena.move_unit(self, path[path_index]):
                         print("ERROR MOVING")
