@@ -55,14 +55,14 @@ stats_giant = {
 }
 
 stats_tower_small = {
-    "troop_health": 2000,
-    "troop_damage": 10,
+    "troop_health": 1400,
+    "troop_damage": 50,
     "troop_movement_speed": 0,
     "troop_favorite_target": "any",
     "troop_attack_type": "melee",
-    "troop_attack_speed": 60,
+    "troop_attack_speed": 48,
     "troop_attack_range": 9, # towers are the only troop that doesn't have an aggro range, they use the troop attack range
-    "troop_attack_cooldown": 60,
+    "troop_attack_cooldown": 1,
     "troop_type": "building",
     "troop_width": 3,
     "troop_height": 3,
@@ -70,8 +70,8 @@ stats_tower_small = {
 }
 
 stats_tower_center = {
-    "troop_health": 4000,
-    "troop_damage": 10,
+    "troop_health": 2400,
+    "troop_damage": 50,
     "troop_movement_speed": 0, 
     "troop_attack_speed": 60,
     "troop_attack_range": 9, # towers are the only troop that doesn't have an aggro range, they use the troop attack range

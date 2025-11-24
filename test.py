@@ -5,6 +5,11 @@ TODO: test the find_path_bfs function
 
 TODO: make find_path_bfs not use arena at all but a grid instead so we can modify the grid given to it
 
+
+"ACTUAL ONES"
+TODO: add win situation and replay button
+TODO: add tower animations and destructed building
+TODO: add timer for the battle and suddendeath sitation
 """
 
 

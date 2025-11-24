@@ -1,5 +1,7 @@
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, List
+
+import pygame
 from assets.components.sprite_manager import SpriteManager
 from assets.components.tower_asset_manager import TowerAssetManager
 from assets.components.ui_asset_manager import UIAssetManager
@@ -54,6 +56,15 @@ class AssetManager:
     def get_elixir_icon(self, size: int = 20):
         """Get elixir icon (delegates to UIAssetManager)."""
         return self.ui.get_elixir_icon(size)
+
+    def get_card_overlay(self, width: int, height: int, 
+                        color: Tuple[int, int, int, int] = (128, 128, 128, 128)) -> pygame.Surface:
+        """Get cached card overlay surface (delegates to UIAssetManager)."""
+        return self.ui.get_card_overlay(width, height, color)
+    
+    def get_elixir_segment_positions(self, bar_width: int, max_elixir: int) -> List[Tuple[int, int]]:
+        """Get cached elixir bar segment positions (delegates to UIAssetManager)."""
+        return self.ui.get_elixir_segment_positions(bar_width, max_elixir)
     
     def get_font(self, size: int = 24):
         """Get font (delegates to TextRenderer)."""
@@ -84,15 +95,17 @@ class AssetManager:
             for mgr in managers.values():
                 mgr.clear_cache()
     
-    def get_cache_stats(self) -> Dict[str, int]:
-        """Get cache statistics for all managers."""
-        return {
-            'sprites': self.sprites.cache_size(),
-            'sprites_scaled': len(self.sprites._scaled_cache),
-            'towers': self.towers.cache_size(),
-            'towers_scaled': len(self.towers._scaled_cache),
-            'ui': self.ui.cache_size(),
-            'ui_scaled': len(self.ui._scaled_cache),
-            'text': self.text.cache_size(),
-            'fonts': len(self.text._font_cache)
-        }
+        def get_cache_stats(self) -> Dict[str, int]:
+            """Get cache statistics for all managers."""
+            return {
+                'sprites': self.sprites.cache_size(),
+                'sprites_scaled': len(self.sprites._scaled_cache),
+                'towers': self.towers.cache_size(),
+                'towers_scaled': len(self.towers._scaled_cache),
+                'ui': self.ui.cache_size(),
+                'ui_scaled': len(self.ui._scaled_cache),
+                'ui_overlays': len(self.ui._overlay_cache),
+                'ui_segments': len(self.ui._segment_cache),
+                'text': self.text.cache_size(),
+                'fonts': len(self.text._font_cache)
+            }

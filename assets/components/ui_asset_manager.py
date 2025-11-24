@@ -1,6 +1,6 @@
 import os
 import pygame
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 from assets.cache_manager import CacheManager
 
 class UIAssetManager(CacheManager):
@@ -10,6 +10,9 @@ class UIAssetManager(CacheManager):
         super().__init__()
         self.assets_path = assets_path
         self._scaled_cache: Dict[Tuple[str, int, int], pygame.Surface] = {}
+        self._overlay_cache: Dict[Tuple[int, int], pygame.Surface] = {}
+        self._segment_cache: Dict[Tuple[int, int], List[Tuple[int, int]]] = {}
+        
         
         self.troop_folder_map = {
             "barbarian": "barbarian",
@@ -80,7 +83,43 @@ class UIAssetManager(CacheManager):
             return scaled
         
         return None
+
+    def get_card_overlay(self, width: int, height: int, 
+                        color: Tuple[int, int, int, int] = (128, 128, 128, 128)) -> pygame.Surface:
+        """
+        Get cached transparent overlay surface for expensive cards.
+        """
+        cache_key = (width, height, color)
+        
+        if cache_key in self._overlay_cache:
+            return self._overlay_cache[cache_key]
+        
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        overlay.fill(color)
+        self._overlay_cache[cache_key] = overlay
+        return overlay
     
+    def get_elixir_segment_positions(self, bar_width: int, max_elixir: int) -> List[Tuple[int, int]]:
+        """Get cached segment positions for elixir bar."""
+        cache_key = (bar_width, max_elixir)
+        
+        if cache_key in self._segment_cache:
+            return self._segment_cache[cache_key]
+        
+        segment_count = max_elixir
+        segment_width = bar_width / segment_count
+        segments = []
+        
+        for i in range(segment_count):
+            seg_x = int(i * segment_width)
+            seg_w = int((i + 1) * segment_width) - int(i * segment_width)
+            segments.append((seg_x, seg_w))
+        
+        self._segment_cache[cache_key] = segments
+        return segments
+
+
+
     def _load_image(self, path: str, convert_alpha: bool = True) -> Optional[pygame.Surface]:
         """Helper to load a single image."""
         if not os.path.exists(path):
@@ -96,3 +135,5 @@ class UIAssetManager(CacheManager):
         """Clear all caches."""
         super().clear_cache()
         self._scaled_cache.clear()
+        self._overlay_cache.clear()
+        self._segment_cache.clear()

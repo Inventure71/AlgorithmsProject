@@ -8,7 +8,7 @@ BASE_GRID_HEIGHT = 32 # in cells (min is 32)
 MULTIPLIER_GRID_HEIGHT = 2 # the number we multiply the base grid height by to get the actual grid height
 
 DRAW_BORDERS = True
-HAND_AREA_HEIGHT = 100
+HAND_AREA_HEIGHT = 140
 ARENA_BACKGROUND_USE_IMAGE = True
 DRAW_ATTACK_RANGES_DEBUG = True 
 

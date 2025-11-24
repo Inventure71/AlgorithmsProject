@@ -2,7 +2,7 @@ from arena import arena
 from core.linear_search import linear_search
 
 class Player:
-    def __init__(self, name, deck, team, arena):
+    def __init__(self, name, deck, team, arena, max_elixir=10.0):
         self.name = name
         self.deck = deck
         self.team = team
@@ -12,9 +12,26 @@ class Player:
         self.max_hand_size = 4
         self.hand = []
 
+        # this is going to be a float
+        self.current_elixir = max_elixir//2 # we start with half like in the real game
+        self.max_elixir = max_elixir
+
+        # at base rate it's 1 Elixir every 2.8 seconds, which equals to 0.06 every tick
+        self.elixir_per_tick = 0.006 # every tick, with a bit of eccess (0,008) but it is fine in this case
+    
+    def increase_elixir(self):
+        if self.current_elixir + self.elixir_per_tick <= self.max_elixir:
+            self.current_elixir += self.elixir_per_tick
+        else:
+            self.current_elixir = self.max_elixir
+
     def place_troop(self, location, card):
         #troop = card.create_troop(self.team)
         troops = card.create_troops(self.team)
+        cost = card.cost
+        if cost > self.current_elixir:
+            # not enough elixir
+            return False
 
         if len(troops) == 1:
             print(f"Spawning {troops[0].name} at {location}")
@@ -33,6 +50,7 @@ class Player:
                     print("Strange failure spawning troops")
                     return False
 
+        self.current_elixir = self.current_elixir - cost
         # use my custom linear search to find the card index
         index = linear_search(self.hand, card)
         if index != -1:

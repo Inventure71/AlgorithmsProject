@@ -2,8 +2,8 @@
 Simple calculator to calculate framses to skip between attacks for troops
 """
 
-damage_per_attack = 119
-damage_per_second = 79
+damage_per_attack = 50
+damage_per_second = 62
 frames_per_second = 60 # expected 
 
 
