@@ -57,7 +57,7 @@ class Arena:
         self.one_minute = TICKS_PER_SECOND*60
         self.time_left = self.one_minute*3 # the match is supposed to be 3 minutes
 
-        self.elixir_multiplier = 1.0
+        self.elixir_multiplier = 10.0
 
         # remove 
         #self.time_left = 120
@@ -312,11 +312,88 @@ class Arena:
         if not is_walkable(row, col, self.grid):
             return False
         if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
-            return False
-        if team == 1 and row < self.height//2 + self.height_of_river: # first half of the arena
-            return False
-        if team == 2 and row > self.height//2 - self.height_of_river: # second half of the arena
-            return False
+            return False  
+
+        opponent_towers = self.towers_P2 if team == 1 else self.towers_P1
+    
+        # check which princess towers are alive
+        right_princess_alive = 1 in opponent_towers
+        left_princess_alive = -1 in opponent_towers
+        both_princesses_alive = right_princess_alive and left_princess_alive
+        both_princesses_destroyed = not right_princess_alive and not left_princess_alive
+        
+        # calculate boundaries
+        mid_height = self.height // 2
+        river_height = self.height_of_river
+        mid_width = self.width // 2
+        
+        # both princess towers destroyed: can place anywhere
+        if both_princesses_destroyed:
+            if team == 1:
+                if row < self.height // 4:
+                    return False
+            else:
+                if row > 3 * self.height // 4:
+                    return False
+            return True
+        
+        # both princess towers alive: restrict to own half
+        if both_princesses_alive:
+            if team == 1:
+                # team 1 (bottom): can't place above river
+                if row < mid_height + river_height:
+                    return False
+            else:  # team == 2
+                # team 2 (top): can't place below river
+                if row > mid_height - river_height:
+                    return False
+            return True
+        
+        # one princess tower destroyed: allow partial crossing
+        if team == 1:
+            if not right_princess_alive:
+                # right princess destroyed: can place on right side after river, left side restricted
+                if col < mid_width:
+                    # left side: still restricted to own half
+                    if row < mid_height + river_height:
+                        return False
+                else:
+                    # right side: can place after quarter point
+                    if row < self.height // 4:
+                        return False
+            else:  # left princess destroyed
+                # left princess destroyed: can place on left side after river, right side restricted
+                if col > mid_width:
+                    # right side: still restricted to own half
+                    if row < mid_height + river_height:
+                        return False
+                else:
+                    # left side: can place after quarter point
+                    if row < self.height // 4:
+                        return False
+        else:  # team == 2
+            if not right_princess_alive:
+                # right princess destroyed: can place on right side before river, left side restricted
+                if col < mid_width:
+                    # left side: still restricted to own half
+                    if row > mid_height - river_height:
+                        return False
+                else:
+                    # right side: can place before quarter point
+                    if row > 3 * self.height // 4:
+                        return False
+            else:  # left princess destroyed
+                # left princess destroyed: can place on left side before river, right side restricted
+                if col > mid_width:
+                    # right side: still restricted to own half
+                    if row > mid_height - river_height:
+                        return False
+                else:
+                    # left side: can place before quarter point
+                    if row > 3 * self.height // 4:
+                        return False
+
+        # if both princess towers are alive: allowed cells are before the river
         
         return True
 
