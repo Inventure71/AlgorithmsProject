@@ -1,4 +1,3 @@
-from re import I
 from arena.arena import Arena
 from constants import *
 from deck.card import Card
@@ -35,6 +34,7 @@ arena = None
 tile_size = None
 selected_card = None
 card_rects = []
+time_location = None
 arena_background_surface = None
 arena_background_dirty = True
 asset_manager = AssetManager()
@@ -56,9 +56,11 @@ deck_p2 = Deck(cards)
 deck_p2.shuffle_cards()
 
 def setup_arena():
-    global screen, clock, arena, tile_size, asset_manager
+    global screen, clock, arena, tile_size, asset_manager, time_location
     # find optimal tile size
     tile_size = 800/rows # optimal for 32 is 25
+
+    time_location = (int(cols * tile_size) - 50, 10)
 
     pygame.init()
 
@@ -376,34 +378,30 @@ def draw_hand(player):
             overlay = asset_manager.get_card_overlay(card_width, card_height)
             screen.blit(overlay, (x, y))
 
-        if elixir_icon:
-            # position icon at bottom center of card
-            icon_x = x + (card_width - elixir_icon_size) // 2  # Center horizontally
-            icon_y = y + card_height - elixir_icon_size - 5  # 5 pixels from bottom
-            
-            # draw the elixir icon
-            screen.blit(elixir_icon, (icon_x, icon_y))
-            
-            # draw cost number centered on the icon
-            cost_text = asset_manager.get_text_surface(
-                str(card.cost), 
-                size=16, 
-                color=(255, 255, 255)  # White text
-            )
-            cost_text_width, cost_text_height = cost_text.get_size()
-            
-            # center the text on the icon
-            text_x = icon_x + (elixir_icon_size - cost_text_width) // 2
-            text_y = icon_y + (elixir_icon_size - cost_text_height) // 2
-            
-            screen.blit(cost_text, (text_x, text_y))
-        
-        else:
-            # fallback: draw cost text if icon not available
-            _, cost_text = get_card_text_surfaces(card)
-            screen.blit(cost_text, (x + 5, y + card_height - 20))
+        icon_x = x + (card_width - elixir_icon_size) // 2  # center horizontally
+        icon_y = y + card_height - elixir_icon_size - 5  # 5 pixels from bottom
+
+        draw_elixir_icon(icon_x, icon_y, elixir_icon_size, text_value=card.cost, text_size=16)
+
     
     return card_rects
+
+def draw_elixir_icon(icon_x, icon_y, icon_size, text_value=None, text_size=18, text_color=(255, 255, 255)):
+    elixir_icon = asset_manager.get_elixir_icon(icon_size)
+    
+    if elixir_icon:
+        screen.blit(elixir_icon, (icon_x, icon_y))
+        
+        if text_value is not None:
+            text_surface = asset_manager.get_text_surface(
+                str(text_value),
+                size=text_size,
+                color=text_color
+            )
+            text_width, text_height = text_surface.get_size()
+            text_x = icon_x + (icon_size - text_width) // 2
+            text_y = icon_y + (icon_size - text_height) // 2
+            screen.blit(text_surface, (text_x, text_y))
 
 def draw_elixir_bar(player, hand_start_y, total_width, card_height, start_x):
     """Draw the purple segmented elixir bar with icon + number (Clash Royale style)."""
@@ -465,24 +463,10 @@ def draw_elixir_bar(player, hand_start_y, total_width, card_height, start_x):
 
     # elixir icon with number on the left
     icon_size = bar_height + 12
-    elixir_icon = asset_manager.get_elixir_icon(icon_size)
     icon_x = bar_x - icon_size - 8
     icon_y = bar_y + (bar_height - icon_size) // 2
 
-    if elixir_icon:
-        screen.blit(elixir_icon, (icon_x, icon_y))
-
-        # integer elixir value (white)
-        elixir_value_text = asset_manager.get_text_surface(
-            str(int(current_elixir)),
-            size=18,
-            color=(255, 255, 255),
-        )
-        tw, th = elixir_value_text.get_size()
-        text_x = icon_x + (icon_size - tw) // 2
-        text_y = icon_y + (icon_size - th) // 2
-        screen.blit(elixir_value_text, (text_x, text_y))
-
+    draw_elixir_icon(icon_x, icon_y, icon_size, text_value=int(current_elixir))
 
 """DEBUG FUNCTIONS"""
 def draw_attack_ranges():
@@ -546,7 +530,10 @@ player_2.setup_hand()
 
 # the loop only works for player 1 input for now
 while True:
-    arena.frame_count += 1
+    if not arena.tick():
+        print("Match over")
+        break
+
     # here we handle pygame events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -604,9 +591,8 @@ while True:
     game_tick()
     draw_units()
 
-
-    #if DRAW_ATTACK_RANGES_DEBUG:
-    #    draw_attack_ranges()
+    if DRAW_ATTACK_RANGES_DEBUG:
+        draw_attack_ranges()
 
     card_rects = draw_hand(player_1)
 
@@ -614,7 +600,15 @@ while True:
     fps_surface = font.render(f"FPS: {clock.get_fps():.1f}", True, (255, 255, 255))
     screen.blit(fps_surface, (10, 10))
 
-    pygame.display.flip()
-    clock.tick(60)
+    """TIME LEFT"""
+    time_left_surface = font.render(f"{(arena.time_left//arena.one_minute)}:{((arena.time_left%arena.one_minute)//TICKS_PER_SECOND):02d}", True, (255, 255, 255))
+    screen.blit(time_left_surface, time_location)
+    
+    """ELIXIR MULTIPLIER"""
+    if arena.elixir_multiplier != 1:
+        draw_elixir_icon(time_location[0], time_location[1] + 20, 40, f"x{arena.elixir_multiplier:.1f}")
 
+    pygame.display.flip()
+    clock.tick(TICKS_PER_SECOND+1) # we add 1 to have a bit of a margin, sometimes it goes a bit slow
+ 
 pygame.quit()

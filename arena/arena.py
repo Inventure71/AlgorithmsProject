@@ -1,4 +1,3 @@
-import random
 from arena.utils.random_utils import is_cell_in_bounds, is_walkable
 from constants import *
 from troops.generic_troop import Troop
@@ -46,7 +45,6 @@ class Arena:
         self.towers_P2 = {}
 
 
-
         """POST GENERATION"""
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
         self.unique_troops = set()
@@ -54,6 +52,11 @@ class Arena:
 
         self.asset_manager = None
         self.arena_background_dirty = True
+
+        self.one_minute = TICKS_PER_SECOND*60
+        self.time_left = self.one_minute*3 # the match is supposed to be 3 minutes
+
+        self.elixir_multiplier = 1.0
 
     def generate_river(self):
         # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
@@ -272,6 +275,19 @@ class Arena:
         self.mirror_arena()
     
     """utils""" 
+    def tick(self):
+        self.frame_count += 1
+        self.time_left -= 1
+        if self.time_left == self.one_minute:
+            print("1 minute left")
+            self.elixir_multiplier = 2.0 # we double the elixir in the last minute
+        if self.time_left <= 0:
+            print("Match over")
+            return False
+
+        return True
+
+
     def is_movable_cell(self, row, col, moving_troop=None):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
