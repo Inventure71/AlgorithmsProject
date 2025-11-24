@@ -7,6 +7,8 @@ walkable_cells = [GRASS, BRIDGE]
 BASE_GRID_HEIGHT = 32 # in cells (min is 32)
 MULTIPLIER_GRID_HEIGHT = 2 # the number we multiply the base grid height by to get the actual grid height
 
+GAP_BETWEEN_TOWER_CELLS = 1 # this is the multiple of the number of cells to not add for example 3 would mean 1 every 3 is added to the occupancy grid
+
 DRAW_BORDERS = True
 HAND_AREA_HEIGHT = 140
 ARENA_BACKGROUND_USE_IMAGE = True

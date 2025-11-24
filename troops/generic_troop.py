@@ -112,6 +112,8 @@ class Troop:
         if got_blocked: # means we got blocked by a troop so we need to path considering the troops
             path = find_path_bfs(self.location, self.arena.grid, occupancy_grid, self, cell_type=tower_to_find)
             self.current_path_index = 0
+            if not path:
+                print(f"{self.name} got blocked by a troop, no path found")
 
         elif self.current_path:
             path = self.current_path
@@ -269,6 +271,8 @@ class Troop:
             if not self.arena.move_unit(self, path[steps_done]):
                 #print("Unit in the way checking again path considering troops")  
                 self.reset_path()
+                if got_blocked:
+                    self.is_targetting_something = None # we can't get to the target 
                 self.move_to_tower(got_blocked=True)
                 return
 

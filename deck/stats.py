@@ -3,7 +3,7 @@
 stats_barbarian = {
     "troop_health": 262, 
     "troop_damage": 10, 
-    "troop_movement_speed": 0.2, 
+    "troop_movement_speed": 0.05, 
     "troop_attack_type": "melee", 
     "troop_attack_speed": 79, 
     "troop_attack_range": 1, 
@@ -21,7 +21,7 @@ stats_barbarian = {
 stats_archer= {
     "troop_health": 119, 
     "troop_damage": 39, 
-    "troop_movement_speed": 0.2, 
+    "troop_movement_speed": 0.05, 
     "troop_attack_type": "ranged", 
     "troop_attack_speed": 54, 
     "troop_attack_range": 3, 
@@ -39,7 +39,7 @@ stats_archer= {
 stats_giant = {
     "troop_health": 1933,
     "troop_damage": 119,
-    "troop_movement_speed": 0.15,
+    "troop_movement_speed": 0.04,
     "troop_attack_type": "melee",
     "troop_attack_speed": 90,
     "troop_attack_range": 1,

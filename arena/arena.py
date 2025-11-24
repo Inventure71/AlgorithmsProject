@@ -128,7 +128,7 @@ class Arena:
                 rel_row = index_row - top_left[0]  # relative to top-left
                 rel_col = index_col - top_left[1]
 
-                if (rel_row == 0 or rel_row == tower.height - 1 or rel_col == 0 or rel_col == tower.width - 1) and (rel_col % 2 == 0 or rel_row % 2 == 0):
+                if (rel_row == 0 or rel_row == tower.height - 1 or rel_col == 0 or rel_col == tower.width - 1) and (rel_col % GAP_BETWEEN_TOWER_CELLS == 0 or rel_row % GAP_BETWEEN_TOWER_CELLS == 0):
                     self.occupancy_grid[(index_row, index_col)] = tower
                 
         return tower  # return the tower for potential use

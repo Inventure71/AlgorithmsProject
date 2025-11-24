@@ -15,13 +15,14 @@ class Player:
         # this is going to be a float
         self.current_elixir = max_elixir//2 # we start with half like in the real game
         self.max_elixir = max_elixir
+        self.elixir_multiplier = 10.0 # this will be changed in the last minute to make the elixir go faster
 
         # at base rate it's 1 Elixir every 2.8 seconds, which equals to 0.06 every tick
         self.elixir_per_tick = 0.006 # every tick, with a bit of eccess (0,008) but it is fine in this case
     
     def increase_elixir(self):
-        if self.current_elixir + self.elixir_per_tick <= self.max_elixir:
-            self.current_elixir += self.elixir_per_tick
+        if self.current_elixir + (self.elixir_per_tick* self.elixir_multiplier) <= self.max_elixir: # parenthesis not needed but better to read
+            self.current_elixir += self.elixir_per_tick * self.elixir_multiplier
         else:
             self.current_elixir = self.max_elixir
 
