@@ -85,17 +85,39 @@ class Troop:
     def find_closest_target(self, occupancy_grid, got_blocked=False):
         # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
+        # we check if the troop is more than half to the right which means it would be in the right section and should need to check the right tower 
+        if self.team == 1: # use the opposite team to find their towers
+            towers = self.arena.towers_P2
+        else:
+            towers = self.arena.towers_P1
+
+        if (self.arena.width // 2 - self.location[1]) < 0: 
+            if len(towers) != 3 and 1 not in towers: # 1 is the right tower
+                tower_number = 0
+            else:
+                # all towers still alive or the one we are targetting still there
+                tower_number = 1
+
+        else:
+            if len(towers) != 3 and -1 not in towers: # -1 is the left tower
+                tower_number = 0
+            else:
+                # all towers still alive or the one we are targetting still there
+                tower_number = -1
+
+        tower_to_find = self.tower_type + tower_number
+
         minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop()
         # path to the tower (we ignore troops here) or we use the current path if it is set
         if got_blocked: # means we got blocked by a troop so we need to path considering the troops
-            path = find_path_bfs(self.location, self.arena.grid, occupancy_grid, self, cell_type=self.tower_type)
+            path = find_path_bfs(self.location, self.arena.grid, occupancy_grid, self, cell_type=tower_to_find)
             self.current_path_index = 0
 
         elif self.current_path:
             path = self.current_path
 
         else: # lighter pathing, we ignore troops
-            path = find_path_bfs(self.location, self.arena.grid, {}, self, cell_type=self.tower_type)
+            path = find_path_bfs(self.location, self.arena.grid, {}, self, cell_type=tower_to_find)
 
         
         if self.attack_aggro_range >= minimum_distance_to_troop >= 0:

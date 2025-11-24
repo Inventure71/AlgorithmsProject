@@ -42,6 +42,10 @@ class Arena:
         """
         # default is grass
         self.grid = [[GRASS for _ in range(self.width)] for _ in range(self.height)]
+        self.towers_P1 = {} # dict key: tower_n value: tower_obj
+        self.towers_P2 = {}
+
+
 
         """POST GENERATION"""
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
@@ -111,11 +115,15 @@ class Arena:
             tower.is_active = False
 
         self.unique_troops.add(tower)
+        if team == 1:
+            self.towers_P1[tower_type] = tower
+        else:
+            self.towers_P2[tower_type] = tower
 
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
             for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
         
-                self.grid[index_row][index_col] = tower_grid_type
+                self.grid[index_row][index_col] = tower_grid_type + tower_type
         
                 rel_row = index_row - top_left[0]  # relative to top-left
                 rel_col = index_col - top_left[1]
@@ -190,7 +198,7 @@ class Arena:
                         if self.grid[y][x] == 2:
                             self.grid[y][x] = BRIDGE
     
-    def mirror_arena(self):
+    def mirror_arena(self, team=2):
         lower_center = self.height//2 
         print("lower center", lower_center)
 
@@ -221,7 +229,7 @@ class Arena:
                         width=tower.width,  
                         height=tower.height, 
                         color=(255, 0, 0),
-                        team=2,
+                        team=team,
                         location=(mirrored_row, mirrored_col),
                         arena=self,
                         asset_manager=self.asset_manager,
@@ -238,7 +246,7 @@ class Arena:
                         for col_offset in range(tower.width):
                             cell = (mirrored_row + row_offset, mirrored_col + col_offset)
                             if is_cell_in_bounds(cell, self.grid):
-                                self.grid[cell[0]][cell[1]] = TOWER_P2
+                                self.grid[cell[0]][cell[1]] = TOWER_P2 + tower_type
                                 mirrored_tower.cached_cells.append(cell)
                                 
                                 # Store only border cells in occupancy_grid
@@ -246,11 +254,15 @@ class Arena:
                                     self.occupancy_grid[cell] = mirrored_tower
                     
                     self.unique_troops.add(mirrored_tower)
+                    if team == 1:
+                        self.towers_P1[tower_type] = mirrored_tower
+                    else:
+                        self.towers_P2[tower_type] = mirrored_tower
         
         # Mirror non-tower grid cells
         for row in range(lower_center, self.height):
             for col in range(self.width):
-                if self.grid[row][col] not in [TOWER_P1, TOWER_P2]:
+                if self.grid[row][col] not in [TOWER_P1, TOWER_P2, TOWER_P1+1, TOWER_P2+1, TOWER_P1-1, TOWER_P2-1]:
                     self.grid[self.height-row-1][col] = self.grid[row][col]
 
     def world_generation(self):
@@ -259,7 +271,7 @@ class Arena:
         self.generate_mock_bridges()
         self.mirror_arena()
     
-    """utils"""
+    """utils""" 
     def is_movable_cell(self, row, col, moving_troop=None):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
@@ -360,9 +372,17 @@ class Arena:
             if troop.name.startswith("Tower"):
                 if troop.team == tower_troop.team and troop.is_active == False and troop.is_alive:
                     troop.is_active = True
+                    if troop.team == 1: #TODO: check if this is correct
+                        self.central_tower_P1_active = True
+                    else: 
+                        self.central_tower_P2_active = True
 
         self.unique_troops.discard(tower_troop)
         occupied_cells = tower_troop.occupied_cells({})
+        if tower_troop.team == 1:
+            self.towers_P1.pop(tower_troop.tower_number)
+        else:
+            self.towers_P2.pop(tower_troop.tower_number)
         
         for cell in occupied_cells:
             # clean up occupancy_grid
@@ -373,7 +393,7 @@ class Arena:
             row, col = cell
             if is_cell_in_bounds(cell, self.grid):
                 # reset tower cells back to GRASS
-                if self.grid[row][col] in [TOWER_P1, TOWER_P2]:
+                if self.grid[row][col] in [TOWER_P1, TOWER_P2, TOWER_P1+1, TOWER_P2+1, TOWER_P1-1, TOWER_P2-1]:
                     self.grid[row][col] = GRASS
         
         self.arena_background_dirty = True
