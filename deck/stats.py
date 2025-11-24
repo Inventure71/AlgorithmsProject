@@ -1,11 +1,11 @@
 
 
 stats_barbarian = {
-    "troop_health": 100, 
+    "troop_health": 262, 
     "troop_damage": 10, 
     "troop_movement_speed": 0.2, 
     "troop_attack_type": "melee", 
-    "troop_attack_speed": 60, 
+    "troop_attack_speed": 79, 
     "troop_attack_range": 1, 
     "troop_attack_aggro_range": 5,
     "troop_attack_cooldown": 1, 
@@ -19,11 +19,11 @@ stats_barbarian = {
 }
 
 stats_archer= {
-    "troop_health": 50, 
-    "troop_damage": 5, 
+    "troop_health": 119, 
+    "troop_damage": 39, 
     "troop_movement_speed": 0.2, 
     "troop_attack_type": "ranged", 
-    "troop_attack_speed": 45, 
+    "troop_attack_speed": 54, 
     "troop_attack_range": 3, 
     "troop_attack_aggro_range": 5,
     "troop_attack_cooldown": 1, 
@@ -31,9 +31,27 @@ stats_archer= {
     "troop_favorite_target": "any",
     "troop_width": 1,
     "troop_height": 1,
-    "troop_cost": 2,
+    "troop_cost": 3,
     "troop_count": 2,
     "scale_multiplier": 0.5,
+}
+
+stats_giant = {
+    "troop_health": 1933,
+    "troop_damage": 119,
+    "troop_movement_speed": 0.15,
+    "troop_attack_type": "melee",
+    "troop_attack_speed": 90,
+    "troop_attack_range": 1,
+    "troop_attack_aggro_range": 5,
+    "troop_attack_cooldown": 1, 
+    "troop_type": "troop",
+    "troop_favorite_target": "building",
+    "troop_width": 1,
+    "troop_height": 1,
+    "troop_cost": 5,
+    "troop_count": 1,
+    "scale_multiplier": 1,
 }
 
 stats_tower_small = {
@@ -68,4 +86,5 @@ stats_tower_center = {
 stats = {
     "barbarian": stats_barbarian,
     "archer": stats_archer,
+    "giant": stats_giant,
 }
