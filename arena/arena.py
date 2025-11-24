@@ -43,6 +43,7 @@ class Arena:
         self.grid = [[GRASS for _ in range(self.width)] for _ in range(self.height)]
         self.towers_P1 = {} # dict key: tower_n value: tower_obj
         self.towers_P2 = {}
+        self.game_finished = False
 
 
         """POST GENERATION"""
@@ -281,11 +282,16 @@ class Arena:
     def tick(self):
         self.frame_count += 1
         self.time_left -= 1
+        if self.game_finished:
+            return False
+
         if self.time_left == self.one_minute:
             print("1 minute left")
             self.elixir_multiplier = 2.0 # we double the elixir in the last minute
+        
         if self.time_left <= 0:
             print("Match over")
+            self.game_finished = True
             return False
 
         return True
@@ -391,7 +397,7 @@ class Arena:
             if troop.name.startswith("Tower"):
                 if troop.team == tower_troop.team and troop.is_active == False and troop.is_alive:
                     troop.is_active = True
-                    if troop.team == 1: #TODO: check if this is correct
+                    if troop.team == 1:
                         self.central_tower_P1_active = True
                     else: 
                         self.central_tower_P2_active = True
@@ -416,6 +422,13 @@ class Arena:
                     self.grid[row][col] = GRASS
         
         self.arena_background_dirty = True
+        if 0 not in self.towers_P1:
+            self.game_finished = True
+            return False
+        if 0 not in self.towers_P2:
+            self.game_finished = True
+            return False
+
         return True
 
 if __name__ == "__main__":

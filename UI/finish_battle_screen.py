@@ -69,24 +69,24 @@ class FinishBattleScreen:
         self.restart_clicked = True
 
     def draw(self):
-        # Get size of pygame display
+        # get size of pygame display
         display_width, display_height = pygame.display.get_surface().get_size()
         winner_screen = self.asset_manager.get_winner_screen(display_width, display_height)
         self.screen.blit(winner_screen, (0, 0))
 
-        # Calculate crowns for each team
-        p1_crowns = 3 - len(self.arena.towers_P1) if 0 in self.arena.towers_P1 else 3
-        p2_crowns = 3 - len(self.arena.towers_P2) if 0 in self.arena.towers_P2 else 3
+        # calculate crowns for each team
+        p1_crowns = 3 - len(self.arena.towers_P2) if 0 in self.arena.towers_P2 else 3
+        p2_crowns = 3 - len(self.arena.towers_P1) if 0 in self.arena.towers_P1 else 3
         
-        # Crown size and positioning
+        # crown size and positioning
         crown_size = 80
         cushion_spacing = 110  # Distance between cushions
         
-        # Position for P2 (red/pink couch - top)
+        # position for P2 (red/pink couch - top)
         p2_center_y = display_height * 0.20  # Top couch
         p2_center_x = display_width / 2
         
-        # Position for P1 (blue couch - bottom)
+        # position for P1 (blue couch - bottom)
         p1_center_y = display_height * 0.50  # Bottom couch
         p1_center_x = display_width / 2
         
@@ -94,7 +94,7 @@ class FinishBattleScreen:
         for i in range(p2_crowns):
             crown = self.asset_manager.get_crown_image(2, crown_size)
             if crown:
-                # position crowns: left, center, right
+                # position crowns - left, center, right
                 offset = (i - 1) * cushion_spacing  # -1, 0, 1 positions
                 crown_x = p2_center_x + offset - crown_size // 2
                 crown_y = p2_center_y - crown_size // 2 + abs(i - 1) * 10
@@ -104,13 +104,13 @@ class FinishBattleScreen:
         for i in range(p1_crowns):
             crown = self.asset_manager.get_crown_image(1, crown_size)
             if crown:
-                # position crowns: left, center, right
+                # position crowns - left, center, right
                 offset = (i - 1) * cushion_spacing  # -1, 0, 1 positions
                 crown_x = p1_center_x + offset - crown_size // 2
                 crown_y = p1_center_y - crown_size // 2 + abs(i - 1) * 10
                 self.screen.blit(crown, (crown_x, crown_y))
         
-        # draw winner text above the winning team's couch
+        # draw winner text above the winning team's couch (blue or red)
         if self.winner_team == 1:
             # p1 (blue) wins - text above blue couch
             text_color = (100, 149, 237)  # Blue
