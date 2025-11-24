@@ -586,9 +586,8 @@ while looping: # bigger loop for the game loop
                             click_handled = True # in case we add other statments later 
                     
         if arena.frame_count % 100 == 0 and selected_card is not None:
-            #player_2.place_troop((3, 3), selected_card)
-            pass
-
+            player_2.place_troop((3, 3), selected_card)
+            
 
         player_1.increase_elixir()    
         player_2.increase_elixir()
