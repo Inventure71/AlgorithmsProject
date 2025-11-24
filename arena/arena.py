@@ -109,13 +109,18 @@ class Arena:
             tower.is_active = False
 
         self.unique_troops.add(tower)
-
-        # place tower in grid and occupancy_grid
+        
         for index_row in range(bottom_left[1]-scaled_height+1, bottom_left[1]+1):
             for index_col in range(bottom_left[0], bottom_left[0]+scaled_width):
-                self.grid[index_row][index_col] = tower_grid_type
-                self.occupancy_grid[(index_row, index_col)] = tower
         
+                self.grid[index_row][index_col] = tower_grid_type
+        
+                rel_row = index_row - top_left[0]  # relative to top-left
+                rel_col = index_col - top_left[1]
+
+                if (rel_row == 0 or rel_row == tower.height - 1 or rel_col == 0 or rel_col == tower.width - 1) and (rel_col % 2 == 0 or rel_row % 2 == 0):
+                    self.occupancy_grid[(index_row, index_col)] = tower
+                
         return tower  # return the tower for potential use
 
     def generate_towers(self):
@@ -187,63 +192,61 @@ class Arena:
         lower_center = self.height//2 
         print("lower center", lower_center)
 
-        # store towers we've already processed
-        processed_towers = set()
+        # Find all team 1 towers from unique_troops (more reliable than scanning grid)
+        for tower in list(self.unique_troops):
+            if tower.is_tower and tower.team == 1:
+                # extract tower type from name
+                result = re.search(r'Tower\s*(-?\d+)', tower.name)
+                if result:
+                    tower_type = int(result.group(1))
+                    
+                    # calculate mirrored position
+                    orig_row, orig_col = tower.location
+                    mirrored_row = self.height - (orig_row + tower.height)
+                    mirrored_col = orig_col
+                    
+                    # create mirrored tower with correct team and color
+                    mirrored_tower = Troop(
+                        name=f"Tower {tower_type}",
+                        health=tower.health,
+                        damage=tower.damage,
+                        movement_speed=0,
+                        attack_type="Ranged",
+                        attack_speed=tower.attack_speed,
+                        attack_range=int(tower.attack_range/MULTIPLIER_GRID_HEIGHT),
+                        attack_aggro_range=int(tower.attack_aggro_range/MULTIPLIER_GRID_HEIGHT),
+                        attack_cooldown=tower.attack_cooldown,
+                        width=tower.width,  
+                        height=tower.height, 
+                        color=(255, 0, 0),
+                        team=2,
+                        location=(mirrored_row, mirrored_col),
+                        arena=self,
+                        asset_manager=self.asset_manager
+                    )
+                    if tower_type == 0:
+                        mirrored_tower.is_active = False
+                    
+                    # Cache cells and place in grid
+                    mirrored_tower.cached_cells = []
+                    
+                    for row_offset in range(tower.height):
+                        for col_offset in range(tower.width):
+                            cell = (mirrored_row + row_offset, mirrored_col + col_offset)
+                            if is_cell_in_bounds(cell, self.grid):
+                                self.grid[cell[0]][cell[1]] = TOWER_P2
+                                mirrored_tower.cached_cells.append(cell)
+                                
+                                # Store only border cells in occupancy_grid
+                                if (row_offset == 0 or row_offset == tower.height - 1 or col_offset == 0 or col_offset == tower.width - 1) and (col_offset % 2 == 0 or row_offset % 2 == 0):
+                                    self.occupancy_grid[cell] = mirrored_tower
+                    
+                    self.unique_troops.add(mirrored_tower)
         
+        # Mirror non-tower grid cells
         for row in range(lower_center, self.height):
             for col in range(self.width):
-                if self.grid[row][col] == TOWER_P1:
-                    # get the tower from this cell
-                    tower = self.occupancy_grid.get((row, col))
-                    
-                    if tower and tower not in processed_towers:
-                        processed_towers.add(tower)
-
-                        # extract tower type from name
-                        result = re.search(r'Tower\s*(-?\d+)', tower.name)
-                        if result:
-                            tower_type = int(result.group(1))
-                            
-                            # dalculate mirrored position
-                            orig_row, orig_col = tower.location
-                            mirrored_row = self.height - (orig_row + tower.height)
-                            mirrored_col = orig_col
-                            
-                            # create mirrored tower with correct team and color
-                            mirrored_tower = Troop(
-                                name=f"Tower {tower_type}",
-                                health=tower.health,
-                                damage=tower.damage,
-                                movement_speed=0,
-                                attack_type="Ranged",
-                                attack_speed=tower.attack_speed,
-                                attack_range=int(tower.attack_range/MULTIPLIER_GRID_HEIGHT),
-                                attack_aggro_range=int(tower.attack_aggro_range/MULTIPLIER_GRID_HEIGHT),
-                                attack_cooldown=tower.attack_cooldown,
-                                width=tower.width,  
-                                height=tower.height, 
-                                color=(255, 0, 0),
-                                team=2,
-                                location=(mirrored_row, mirrored_col),
-                                arena=self,
-                                asset_manager=self.asset_manager
-                            )
-                            if tower_type == 0: # deactivate the middle tower in the mirrored tower
-                                mirrored_tower.is_active = False
-                            
-                            # place mirrored tower in occupancy_grid for all its cells
-                            for row_offset in range(tower.height):
-                                for col_offset in range(tower.width):
-                                    cell = (mirrored_row + row_offset, mirrored_col + col_offset)
-                                    if is_cell_in_bounds(cell, self.grid):
-                                        self.occupancy_grid[cell] = mirrored_tower
-                                        # mirror also the normal grid cell
-                                        self.grid[cell[0]][cell[1]] = TOWER_P2
-                            
-                            self.unique_troops.add(mirrored_tower)
-                            
-                else:
-                    # mirror other grid cells
+                if self.grid[row][col] not in [TOWER_P1, TOWER_P2]:
                     self.grid[self.height-row-1][col] = self.grid[row][col]
 
     def world_generation(self):
@@ -301,6 +304,7 @@ class Arena:
             self.occupancy_grid[occupied_cell] = troop # we set the troop in all the cells it occupies
         
         self.unique_troops.add(troop)
+
         return True
     
     def move_unit(self, troop, new_cell: (int, int)):

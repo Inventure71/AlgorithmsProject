@@ -7,6 +7,7 @@ from player import Player
 from troops.generic_troop import Troop
 from assets.asset_manager import AssetManager
 import pygame
+from core.sorting import sort_for_visualization
 
 colors = {
     0: (0, 0, 0),  # none
@@ -135,7 +136,7 @@ def game_tick():
 
 def draw_units():
     # using the set() to get unique troops (avoid drawing same troop multiple times)
-    for troop in arena.unique_troops:
+    for troop in sort_for_visualization(arena.unique_troops, ascending_order=True):
         if troop.location is None:
             continue
 
@@ -507,7 +508,7 @@ while True:
                         click_handled = True # in case we add other statments later 
                 
     if arena.frame_count % 100 == 0 and selected_card is not None:
-        player_2.place_troop((0, 0), selected_card)
+        player_2.place_troop((3, 3), selected_card)
 
     screen.fill((0, 0, 0))
     draw_arena(selected_card, team=1)
@@ -517,6 +518,11 @@ while True:
         draw_attack_ranges()
 
     card_rects = draw_hand(player_1)
+
+    font = get_font()
+    fps_surface = font.render(f"FPS: {clock.get_fps()}", True, (255, 255, 255))
+    screen.blit(fps_surface, (10, 10))
+
     pygame.display.flip()
     clock.tick(60)
 

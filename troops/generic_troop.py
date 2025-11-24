@@ -49,6 +49,8 @@ class Troop:
         self.is_alive = True
         self.is_active = True
         self.is_targetting_something = None # Value should be of value Troop, this should be changed when the troop starts attacking something so that it stops moving and doesn't focus on something else
+
+        """TOWER"""
         self.is_tower = self.name.startswith("Tower") # check if this is a tower (towers need grid cleanup)
         self.tower_number = int(self.name.split(" ")[1]) if self.is_tower else None
 
