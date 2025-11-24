@@ -1,7 +1,4 @@
-class Node:
-    def __init__(self, value, next=None):
-        self.value = value
-        self.next = next
+from core.linked_list import Node
 
 class Queue:
     def __init__(self):
@@ -25,3 +22,12 @@ class Queue:
                 self.tail = None
             return value
         return None
+
+
+if __name__ == "__main__":
+    queue = Queue()
+    queue.enqueue(1)
+    queue.enqueue(2)
+    queue.enqueue(3)
+    print(queue.dequeue())
+    print(queue.dequeue())

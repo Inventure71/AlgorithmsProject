@@ -2,7 +2,6 @@ from collections import deque
 from arena.utils.random_utils import is_walkable
 from arena.utils.random_utils import is_cell_in_bounds
 from core.linked_list import reconstruct_path
-from core.node import Node
 
 # we modified this function to take into account the width of the troop so that we can check if the path is valid for the troop if it isn't 1 sized
 def get_valid_neighbors(cell: (int, int), grid, occupancy_grid, self_troop, include_non_walkable=False, include_diagonals=False):
@@ -53,9 +52,7 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
 
     # queue holds tuples: (current_tile, path_list)
     # we start at 'start', and the path contains just ['start']
-
-    start_node = Node(start, None)
-    queue = deque([start_node])
+    queue = deque([(start, [start])])
 
     # we keep track of seen tiles to not incur in loops
     visited = set()
@@ -64,20 +61,19 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
     # while our list isn't empty
     while queue:
         # get the first node from queue
-        current_node = queue.popleft()
-        curr_row, curr_col = current_node.value
+        current_node, path = queue.popleft()
 
-        if cell_type and grid[curr_row][curr_col] == cell_type:
+        if cell_type and grid[current_node[0]][current_node[1]] == cell_type:
             # found the cell type that we wanted (edge case: if we somehow start on the target cell type)
-            return reconstruct_path(current_node)
-        elif goal_cell and (curr_row, curr_col) == goal_cell:
+            return path
+        elif goal_cell and (current_node[0], current_node[1]) == goal_cell:
             # found the specific cell that we wanted
-            return reconstruct_path(current_node)
-        elif (curr_row, curr_col) in occupancy_grid and occupancy_grid[(curr_row, curr_col)] == cell_type:
+            return path
+        elif (current_node[0], current_node[1]) in occupancy_grid and occupancy_grid[(current_node[0], current_node[1])] == cell_type:
             # found a troop
-            return reconstruct_path(current_node)
+            return path
         
-        neighbors = get_valid_neighbors((curr_row, curr_col), grid, occupancy_grid, self_troop, include_non_walkable=one_tile_range, include_diagonals=include_diagonals)
+        neighbors = get_valid_neighbors(current_node, grid, occupancy_grid, self_troop, include_non_walkable=one_tile_range, include_diagonals=include_diagonals)
 
         # we loop each neighbor
         for neighbor in neighbors:
@@ -89,16 +85,20 @@ def find_path_bfs(start, grid, occupancy_grid, self_troop, goal_cell=None, cell_
                 
                 if one_tile_range:
                     if (cell_type and grid[neighbor[0]][neighbor[1]] == cell_type):
-                        return reconstruct_path(Node(neighbor, current_node))
+                        return path + [neighbor] 
                     if goal_cell and (neighbor[0], neighbor[1]) == goal_cell:
-                        return reconstruct_path(Node(neighbor, current_node))
+                        return path + [neighbor] 
                     if neighbor in occupancy_grid and occupancy_grid[neighbor] == cell_type:
-                        return reconstruct_path(Node(neighbor, current_node))
+                        return path + [neighbor]
                 
                 # so that we don't visit it in the future
                 if is_valid:
                     visited.add(neighbor)
-                    queue.append(Node(neighbor, current_node))
+
+                    # this path will include the old path and the neighbor
+                    new_path = path + [neighbor]
+
+                    queue.append((neighbor, new_path))
 
     return None # meaning couldn't find any path
             
