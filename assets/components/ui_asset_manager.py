@@ -16,7 +16,18 @@ class UIAssetManager(CacheManager):
         
         self.troop_folder_map = {
             "barbarian": "barbarian",
-            "archer": "archer"
+            "archer": "archer",
+            "giant": "giant",
+            "goblins": "goblins",
+            "dart goblin": "dart_goblin",
+            "elite barbs": "elite_barbs",
+            "knight": "knight",
+            "mini pekka": "mini_pekka",
+            "musketeer": "musketeer",
+            "pekka": "pekka",
+            "royal giant": "royal_giant",
+            "skeletons": "skeletons",
+            "spear goblin": "spear_goblin",
         }
     
     def get_card_image(self, troop_name: str) -> Optional[pygame.Surface]:
@@ -26,9 +37,10 @@ class UIAssetManager(CacheManager):
         
         troop_folder = self.troop_folder_map.get(troop_name.lower())
         if not troop_folder:
+            print(f"No troop folder found for {troop_name}")
             return None
         
-        card_path = os.path.join(self.assets_path, troop_folder, "Card.png")
+        card_path = os.path.join(self.assets_path, troop_folder, "card.png")
         card_image = self._load_image(card_path)
         
         if card_image:

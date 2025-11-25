@@ -512,13 +512,15 @@ while looping: # bigger loop for the game loop
 
     cards = [
     Card(name="barbarian 1", color="red", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager), 
-    Card(name="barbarian 2", color="blue", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
-    Card(name="barbarian 3", color="green", troop_class=Troop, troop_name="barbarian", asset_manager=asset_manager),
     Card(name="archer 1", color="orange", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
-    Card(name="archer 2", color="red", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
-    Card(name="archer 3", color="blue", troop_class=Troop, troop_name="archer", asset_manager=asset_manager),
     Card(name="giant 1", color="yellow", troop_class=Troop, troop_name="giant", asset_manager=asset_manager),
-    Card(name="giant 2", color="green", troop_class=Troop, troop_name="giant", asset_manager=asset_manager)
+    Card(name="goblins 1", color="purple", troop_class=Troop, troop_name="goblins", asset_manager=asset_manager),
+    Card(name="dart goblin 1", color="blue", troop_class=Troop, troop_name="dart goblin", asset_manager=asset_manager),
+    Card(name="elite barbs 1", color="yellow", troop_class=Troop, troop_name="elite barbs", asset_manager=asset_manager),
+    Card(name="knight 1", color="orange", troop_class=Troop, troop_name="knight", asset_manager=asset_manager),
+    Card(name="mini pekka 1", color="blue", troop_class=Troop, troop_name="mini pekka", asset_manager=asset_manager),
+    Card(name="musketeer 1", color="yellow", troop_class=Troop, troop_name="musketeer", asset_manager=asset_manager),
+    Card(name="pekka 1", color="orange", troop_class=Troop, troop_name="pekka", asset_manager=asset_manager),
     ]
 
     deck_p1 = Deck(cards)
