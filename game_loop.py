@@ -106,9 +106,13 @@ def draw_arena(DRAW_PLACABLE_CELLS=False, team=1):
     
     # only draw placable cells overlay if needed (this changes dynamically)
     if DRAW_PLACABLE_CELLS:
+        if selected_card:
+            troop_can_fly = selected_card.troop_can_fly
+        else:
+            troop_can_fly = False
         for y, row in enumerate(arena.grid):
             for x, value in enumerate(row):
-                if arena.is_placable_cell(y, x, team=team, is_flying=selected_card.troop_can_fly):
+                if arena.is_placable_cell(y, x, team=team, is_flying=troop_can_fly):
                     x_pos = int(x * tile_size)
                     y_pos = int(y * tile_size)
                     width = int((x + 1) * tile_size) - x_pos
