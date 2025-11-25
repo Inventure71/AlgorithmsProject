@@ -89,7 +89,7 @@ class Arena:
             tower_grid_type = TOWER_P2
         
         # extract base stats
-        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air = extract_tower_stats(tower_type)
+        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_attack_tile_radius, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air = extract_tower_stats(tower_type)
         
         # calculate scaled dimensions (these are the actual grid cell sizes)
         scaled_width = int(self.width/18*troop_width)
@@ -109,6 +109,7 @@ class Arena:
             attack_range=troop_attack_range,
             attack_aggro_range=troop_attack_aggro_range,
             attack_cooldown=troop_attack_cooldown,
+            attack_tile_radius=troop_attack_tile_radius,
             width=scaled_width,  
             height=scaled_height,  
             color="blue" if team == 1 else "red",
@@ -235,6 +236,7 @@ class Arena:
                         attack_range=int(tower.attack_range/MULTIPLIER_GRID_HEIGHT),
                         attack_aggro_range=int(tower.attack_aggro_range/MULTIPLIER_GRID_HEIGHT),
                         attack_cooldown=tower.attack_cooldown,
+                        attack_tile_radius=tower.attack_tile_radius,
                         width=tower.width,  
                         height=tower.height, 
                         color=(255, 0, 0),

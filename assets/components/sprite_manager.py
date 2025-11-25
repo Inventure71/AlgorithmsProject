@@ -14,7 +14,18 @@ class SpriteManager(CacheManager):
         # troop name to folder mapping
         self.troop_folder_map = {
             "barbarian": "barbarian",
-            "archer": "archer"
+            "archer": "archer",
+            "giant": "giant",
+            "goblins": "goblins",
+            "dart goblin": "dart_goblin",
+            "elite barbs": "elite_barbs",
+            "knight": "knight",
+            "mini pekka": "mini_pekka",
+            "musketeer": "musketeer",
+            "pekka": "pekka",
+            "royal giant": "royal_giant",
+            "skeletons": "skeletons",
+            "spear goblin": "spear_goblin",
         }
     
     def get_sprite(self, troop_name: str, team: int) -> pygame.Surface:
@@ -48,7 +59,7 @@ class SpriteManager(CacheManager):
         if not troop_folder:
             return self._create_fallback_surface(32, 32)
         
-        sprite_path = os.path.join(self.assets_path, troop_folder, f"Team {team}")
+        sprite_path = os.path.join(self.assets_path, troop_folder, f"Team{team}")
         
         if not os.path.exists(sprite_path):
             return self._create_fallback_surface(32, 32)

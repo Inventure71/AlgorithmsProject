@@ -81,7 +81,7 @@ class TowerAssetManager(CacheManager):
             result['destroyed'] = self._load_destroyed_tower(tower_type)
         else:
             tower_folder = "king_tower" if tower_type == 0 else "princess_tower"
-            tower_path = os.path.join(self.assets_path, "tower", f"Team {team}", tower_folder)
+            tower_path = os.path.join(self.assets_path, "tower", f"Team{team}", tower_folder)
             
             if os.path.exists(tower_path):
                 sprite_files = sorted([f for f in os.listdir(tower_path) if f.endswith('.png')])

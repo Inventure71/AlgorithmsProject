@@ -18,6 +18,7 @@ class Troop:
         attack_range,
         attack_aggro_range,
         attack_cooldown,
+        attack_tile_radius,
         width,
         height,
         color,
@@ -39,6 +40,7 @@ class Troop:
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
         self.attack_cooldown = attack_cooldown
+        self.attack_tile_radius = attack_tile_radius
 
         self.troop_type = troop_type
         self.troop_favorite_target = troop_favorite_target
@@ -80,7 +82,7 @@ class Troop:
         self.current_path = None
         self.current_path_index = 0
     
-    """HELPER FUNCTIONS"""
+    """HELPER FUNCTIONS"""        
     def get_occupancy_grid(self):
         if self.troop_can_fly:
             return self.arena.occupancy_grid_flying
@@ -306,7 +308,24 @@ class Troop:
         if self.is_alive and self.is_active:
             if self.in_process_attack:
                 if (self.arena.frame_count-self.in_process_attack) >= self.attack_speed:
-                    self.is_targetting_something.take_damage(self.damage, source_troop=self)
+                    # attack_tile_radius
+                    # we expand the damage in all directions from the location of this troop
+                    # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
+                    loc = self.is_targetting_something.location
+                    for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
+                        for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
+                            # we need to check both occupancy grids if the troop is able to attack air, otherwise only the ground one
+                            loc_to_check = (loc[0]+i_row, loc[1]+i_col)
+                            if self.troop_can_target_air:
+                                if loc_to_check in self.arena.occupancy_grid_flying:
+                                    if self.arena.occupancy_grid_flying[loc_to_check] != self:
+                                        self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
+
+                            if loc_to_check in self.arena.occupancy_grid:
+                                if self.arena.occupancy_grid[loc_to_check] != self:
+                                    self.arena.occupancy_grid[loc_to_check].take_damage(self.damage, source_troop=self)
+
+                    #self.is_targetting_something.take_damage(self.damage, source_troop=self) old system
                     self.in_process_attack = self.arena.frame_count
                     return True
             else:

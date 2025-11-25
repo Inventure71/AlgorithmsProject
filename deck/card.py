@@ -25,6 +25,7 @@ class Card:
             self.troop_attack_range = stats.get(troop_name).get("troop_attack_range")
             self.troop_attack_aggro_range = stats.get(troop_name).get("troop_attack_aggro_range")
             self.troop_attack_cooldown = stats.get(troop_name).get("troop_attack_cooldown")
+            self.troop_attack_tile_radius = stats.get(troop_name).get("troop_attack_tile_radius")
             self.troop_width = stats.get(troop_name).get("troop_width")
             self.troop_height = stats.get(troop_name).get("troop_height")
             self.cost = stats.get(troop_name).get("troop_cost")
@@ -63,6 +64,7 @@ class Card:
                 attack_range=self.troop_attack_range, 
                 attack_aggro_range=self.troop_attack_aggro_range,
                 attack_cooldown=self.troop_attack_cooldown, 
+                attack_tile_radius=self.troop_attack_tile_radius,
                 width=self.troop_width, 
                 height=self.troop_height, 
                 color=self.color, 
