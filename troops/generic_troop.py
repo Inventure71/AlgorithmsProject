@@ -3,7 +3,7 @@ import os
 import random
 import pygame
 from constants import *
-from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range, calculate_center_to_center_distance
+from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 from arena.utils.find_path_bfs import find_path_bfs
 
 class Troop:
@@ -28,6 +28,8 @@ class Troop:
         scale_multiplier = 1,
         troop_type = None,
         troop_favorite_target = "any",
+        troop_can_target_air = False,
+        troop_can_fly = False,
         ):
         self.name = name
         self.health = health
@@ -40,6 +42,7 @@ class Troop:
 
         self.troop_type = troop_type
         self.troop_favorite_target = troop_favorite_target
+        self.troop_can_target_air = troop_can_target_air
         
         self.team = team
         self.width = width
@@ -71,18 +74,25 @@ class Troop:
         self.sprite = self._load_sprite()
 
         """MOVEMENT"""
+        self.troop_can_fly = troop_can_fly
         self.raw_movement_speed = movement_speed
         self.movement_accumulator = 0.0
         self.current_path = None
         self.current_path_index = 0
     
     """HELPER FUNCTIONS"""
+    def get_occupancy_grid(self):
+        if self.troop_can_fly:
+            return self.arena.occupancy_grid_flying
+        else:
+            return self.arena.occupancy_grid
+
     def reset_path(self):
         self.current_path = None
         self.current_path_index = 0
         #self.is_targetting_something = None
         
-    def find_closest_target(self, occupancy_grid, got_blocked=False):
+    def find_closest_target(self, got_blocked=False):
         # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
         # we check if the troop is more than half to the right which means it would be in the right section and should need to check the right tower 
@@ -106,11 +116,11 @@ class Troop:
                 tower_number = -1
 
         tower_to_find = self.tower_type + tower_number
-
+        
         minimum_distance_to_troop, closest_troop = self.find_closest_enemy_troop()
         # path to the tower (we ignore troops here) or we use the current path if it is set
         if got_blocked: # means we got blocked by a troop so we need to path considering the troops
-            path = find_path_bfs(self.location, self.arena.grid, occupancy_grid, self, cell_type=tower_to_find)
+            path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), {}, self, cell_type=tower_to_find)
             self.current_path_index = 0
             if not path:
                 print(f"{self.name} got blocked by a troop, no path found")
@@ -119,14 +129,18 @@ class Troop:
             path = self.current_path
 
         else: # lighter pathing, we ignore troops
-            path = find_path_bfs(self.location, self.arena.grid, {}, self, cell_type=tower_to_find)
+            path = find_path_bfs(self.location, self.arena.grid, {}, {}, self, cell_type=tower_to_find)
 
         
         if self.attack_aggro_range >= minimum_distance_to_troop >= 0:
             # select troop (this also includes the tower)
             self.is_targetting_something = closest_troop
             #print("targetting troop", closest_troop.name)
-            path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+
+            target_grid = closest_troop.get_occupancy_grid()
+            collision_grid = self.get_occupancy_grid()
+
+            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
             self.current_path_index = 0
 
         else:
@@ -147,6 +161,9 @@ class Troop:
             # skip if already checked, same team, or dead
             if troop in checked_troops or troop.team == self.team or not troop.is_alive:
                 continue
+            if troop.troop_can_fly and not self.troop_can_target_air:
+                continue # the troop can't see the target
+            
             if self.troop_favorite_target != "any" and troop.troop_type != self.troop_favorite_target:
                 # we only target the favourite target types
                 continue
@@ -209,13 +226,13 @@ class Troop:
         if not self.is_targetting_something:
             # we first check if something can be targetted
             # let's see if we can attack something near us
-            path = self.find_closest_target(self.arena.occupancy_grid, got_blocked=got_blocked) # this will return the path to the option we are going for 
+            path = self.find_closest_target(got_blocked=got_blocked) # this will return the path to the option we are going for 
 
         if self.is_targetting_something: # if we are now targetting something we do this instead of moving torward the towers
             if not self.is_targetting_something.is_alive:
                 self.is_targetting_something = None
                 self.reset_path()
-                path = self.find_closest_target(self.arena.occupancy_grid)
+                path = self.find_closest_target()
         
             else:
                 # we overwrite the path to the tower to the one to the troop
@@ -223,8 +240,10 @@ class Troop:
                 # make sure that the troop is still in range of the troop that it is attacking if not walk there
                 if not is_in_attack_range(self, self.is_targetting_something):
                     self.reset_path()
+                    target_grid = self.is_targetting_something.get_occupancy_grid()
+
                     #print(f"{self.name} not in range, finding pabth to troop")
-                    path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
                     #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
                     self.current_path = path
                 else:
@@ -273,6 +292,7 @@ class Troop:
                 self.reset_path()
                 if got_blocked:
                     self.is_targetting_something = None # we can't get to the target 
+                    return
                 self.move_to_tower(got_blocked=True)
                 return
 
@@ -312,7 +332,7 @@ class Troop:
         if  not self.target or self.location == self.target:
             self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
         
-        path = find_path_bfs(self.location, self.arena.grid, self.arena.occupancy_grid, self, goal_cell=self.target)
+        path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), {}, self, goal_cell=self.target)
         
         if path:
             for path_index in range(1, int(self.raw_movement_speed) + 1):

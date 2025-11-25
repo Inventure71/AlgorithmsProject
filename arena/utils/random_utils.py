@@ -87,7 +87,10 @@ def calculate_edge_to_edge_distance(source_troop, target_troop):
     
     return distance
 
-def is_walkable(row, col, grid):
+def is_walkable(row, col, grid, is_flying=False):
+    if is_flying:
+        return grid[row][col] in flyable_cells
+    else:
         return grid[row][col] in walkable_cells
 
 def is_cell_in_bounds(cell: (int, int), grid):
@@ -113,7 +116,8 @@ def extract_tower_stats(tower_type):
         troop_height = stats_tower_small.get("troop_height")
         troop_type = stats_tower_small.get("troop_type")
         troop_favorite_target = stats_tower_small.get("troop_favorite_target")
-        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target
+        troop_can_target_air = stats_tower_small.get("troop_can_target_air")
+        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air
     else:
         troop_health = stats_tower_center.get("troop_health")
         troop_damage = stats_tower_center.get("troop_damage")
@@ -127,4 +131,5 @@ def extract_tower_stats(tower_type):
         troop_height = stats_tower_center.get("troop_height")
         troop_type = stats_tower_center.get("troop_type")
         troop_favorite_target = stats_tower_center.get("troop_favorite_target")
-        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target
+        troop_can_target_air = stats_tower_center.get("troop_can_target_air")
+        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air

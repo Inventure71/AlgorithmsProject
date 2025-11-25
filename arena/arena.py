@@ -48,6 +48,7 @@ class Arena:
 
         """POST GENERATION"""
         self.occupancy_grid = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
+        self.occupancy_grid_flying = {} # dictionary of cells and ids of the troop inside of them (max one per cell) --> key: (row, col) value: id
         self.unique_troops = set()
         self.frame_count = 0
 
@@ -88,7 +89,7 @@ class Arena:
             tower_grid_type = TOWER_P2
         
         # extract base stats
-        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target = extract_tower_stats(tower_type)
+        troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_cooldown, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air = extract_tower_stats(tower_type)
         
         # calculate scaled dimensions (these are the actual grid cell sizes)
         scaled_width = int(self.width/18*troop_width)
@@ -116,7 +117,8 @@ class Arena:
             arena=self,
             asset_manager=self.asset_manager,
             troop_type=troop_type,
-            troop_favorite_target=troop_favorite_target
+            troop_favorite_target=troop_favorite_target,
+            troop_can_target_air=troop_can_target_air
         )
         if tower_type == 0: # deactivate the middle tower 
             tower.is_active = False
@@ -241,7 +243,8 @@ class Arena:
                         arena=self,
                         asset_manager=self.asset_manager,
                         troop_type=tower.troop_type,
-                        troop_favorite_target=tower.troop_favorite_target
+                        troop_favorite_target=tower.troop_favorite_target,
+                        troop_can_target_air=tower.troop_can_target_air
                     )
                     if tower_type == 0:
                         mirrored_tower.is_active = False
@@ -296,23 +299,30 @@ class Arena:
 
         return True
 
-
-    def is_movable_cell(self, row, col, moving_troop=None):
+    def is_movable_cell(self, row, col, moving_troop=None, is_flying=False):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
-        if not is_walkable(row, col, self.grid):
-            return False
-        if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
-            return False
+
+        if not is_walkable(row, col, self.grid, is_flying=is_flying):
+                return False
+
+        if moving_troop:
+            occupancy_grid = moving_troop.get_occupancy_grid()
+            if (row, col) in occupancy_grid and moving_troop != occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
+                return False  
+
         return True
     
-    def is_placable_cell(self, row, col, team, moving_troop=None):
+    def is_placable_cell(self, row, col, team, moving_troop=None, is_flying=False):
         if not is_cell_in_bounds((row, col), self.grid):
             return False
-        if not is_walkable(row, col, self.grid):
+        if not is_walkable(row, col, self.grid, is_flying=is_flying):
             return False
-        if (row, col) in self.occupancy_grid and moving_troop != self.occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
-            return False  
+
+        if moving_troop:
+            occupancy_grid = moving_troop.get_occupancy_grid()
+            if (row, col) in occupancy_grid and moving_troop != occupancy_grid[(row, col)]: # check if the cell is occupied by itself, this would mean it can move there
+                return False  
 
         opponent_towers = self.towers_P2 if team == 1 else self.towers_P1
     
@@ -415,12 +425,13 @@ class Arena:
         # checking if all the other cells are valid   
 
         for occupied_cell in occupied_cells:
-            if not self.is_placable_cell(occupied_cell[0], occupied_cell[1], troop.team, moving_troop=troop):
+            if not self.is_placable_cell(occupied_cell[0], occupied_cell[1], troop.team, moving_troop=troop, is_flying=troop.troop_can_fly):
                 return False
         
         for occupied_cell in occupied_cells:
-            self.occupancy_grid[occupied_cell] = troop # we set the troop in all the cells it occupies
-        
+            occupancy_grid = troop.get_occupancy_grid()
+            occupancy_grid[occupied_cell] = troop # we set the troop in all the cells it occupies
+            
         self.unique_troops.add(troop)
 
         return True
@@ -438,19 +449,22 @@ class Arena:
         troop.location = old_location  # we move it back to the old location
         
         for cell in new_occupied_cells:
-            if not self.is_movable_cell(cell[0], cell[1], moving_troop=troop):
+            if not self.is_movable_cell(cell[0], cell[1], moving_troop=troop, is_flying=troop.troop_can_fly):
                 return False
         
         old_occupied_cells = troop.occupied_cells({})
 
+        occupancy_grid = troop.get_occupancy_grid()
+
         for cell in old_occupied_cells:
-            if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop: # kind of unecessary double check but better be safe
-                self.occupancy_grid.pop(cell)
+            if cell in occupancy_grid and occupancy_grid[cell] == troop: # kind of unecessary double check but better be safe
+                occupancy_grid.pop(cell)
+
 
         troop.location = new_cell # to the new left top corner
 
         for cell in new_occupied_cells:
-            self.occupancy_grid[cell] = troop # we set the troop in all the cells it occupies
+            occupancy_grid[cell] = troop # we set the troop in all the cells it occupies
         
     
         return True
@@ -462,8 +476,9 @@ class Arena:
         self.unique_troops.remove(troop)
         occupied_cells = troop.occupied_cells({})
         for cell in occupied_cells:
-            if cell in self.occupancy_grid and self.occupancy_grid[cell] == troop:
-                self.occupancy_grid.pop(cell)
+            occupancy_grid = troop.get_occupancy_grid()
+            if cell in occupancy_grid and occupancy_grid[cell] == troop: # kind of unecessary double check but better be safe
+                occupancy_grid.pop(cell)
         return True
     
     def remove_tower(self, tower_troop):

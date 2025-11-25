@@ -19,6 +19,7 @@ class Card:
             self.troop_health = stats.get(troop_name).get("troop_health")
             self.troop_damage = stats.get(troop_name).get("troop_damage")
             self.troop_movement_speed = stats.get(troop_name).get("troop_movement_speed")
+            self.troop_can_fly = stats.get(troop_name).get("troop_can_fly")
             self.troop_attack_type = stats.get(troop_name).get("troop_attack_type")
             self.troop_attack_speed = stats.get(troop_name).get("troop_attack_speed")
             self.troop_attack_range = stats.get(troop_name).get("troop_attack_range")
@@ -31,6 +32,7 @@ class Card:
             self.scale_multiplier = stats.get(troop_name).get("scale_multiplier")
             self.troop_type = stats.get(troop_name).get("troop_type")
             self.troop_favorite_target = stats.get(troop_name).get("troop_favorite_target")
+            self.troop_can_target_air = stats.get(troop_name).get("troop_can_target_air")
         else:
             raise ValueError(f"Troop {troop_name} not found in stats")
 
@@ -54,6 +56,8 @@ class Card:
                 health=self.troop_health, 
                 damage=self.troop_damage, 
                 movement_speed=self.troop_movement_speed, 
+                troop_can_target_air=self.troop_can_target_air,
+                troop_can_fly=self.troop_can_fly,
                 attack_type=self.troop_attack_type, 
                 attack_speed=self.troop_attack_speed, 
                 attack_range=self.troop_attack_range, 
@@ -117,6 +121,6 @@ class Card:
         base_row, base_col = position
         for row in range(base_row, base_row + self.troop_height):
             for col in range(base_col, base_col + self.troop_width):
-                if not arena.is_placable_cell(row, col, team):
+                if not arena.is_placable_cell(row, col, team, is_flying=self.troop_can_fly):
                     return False
         return True

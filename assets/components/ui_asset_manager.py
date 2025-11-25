@@ -28,6 +28,7 @@ class UIAssetManager(CacheManager):
             "royal giant": "royal_giant",
             "skeletons": "skeletons",
             "spear goblin": "spear_goblin",
+            "bats": "bats",
         }
     
     def get_card_image(self, troop_name: str) -> Optional[pygame.Surface]:

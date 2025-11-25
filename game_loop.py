@@ -108,7 +108,7 @@ def draw_arena(DRAW_PLACABLE_CELLS=False, team=1):
     if DRAW_PLACABLE_CELLS:
         for y, row in enumerate(arena.grid):
             for x, value in enumerate(row):
-                if arena.is_placable_cell(y, x, team=team):
+                if arena.is_placable_cell(y, x, team=team, is_flying=selected_card.troop_can_fly):
                     x_pos = int(x * tile_size)
                     y_pos = int(y * tile_size)
                     width = int((x + 1) * tile_size) - x_pos
@@ -521,6 +521,8 @@ while looping: # bigger loop for the game loop
     Card(name="mini pekka 1", color="blue", troop_class=Troop, troop_name="mini pekka", asset_manager=asset_manager),
     Card(name="musketeer 1", color="yellow", troop_class=Troop, troop_name="musketeer", asset_manager=asset_manager),
     Card(name="pekka 1", color="orange", troop_class=Troop, troop_name="pekka", asset_manager=asset_manager),
+    Card(name="bats 1", color="green", troop_class=Troop, troop_name="bats", asset_manager=asset_manager),
+    Card(name="bats 2", color="green", troop_class=Troop, troop_name="bats", asset_manager=asset_manager),
     ]
 
     deck_p1 = Deck(cards)
@@ -575,7 +577,7 @@ while looping: # bigger loop for the game loop
                         clicked_col = int(mouse_pos[0] // tile_size)
 
                         # check boundaries 
-                        if arena.is_placable_cell(clicked_row, clicked_col, 1):
+                        if arena.is_placable_cell(clicked_row, clicked_col, 1, is_flying=selected_card.troop_can_fly):
                             print(f"Trying to place troop at {clicked_row}, {clicked_col}")
                             
                             # player 
