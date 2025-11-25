@@ -165,7 +165,7 @@ stats_goblins = {
     "troop_height": 1,
     "troop_cost": 2,
     "troop_count": 4,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.5
 }
 stats_dart_goblin = {
     "troop_health": 216,
@@ -185,7 +185,7 @@ stats_dart_goblin = {
     "troop_height": 1,
     "troop_cost": 3,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.7
 }
 stats_elite_barbs = {
     "troop_health": 1100,
@@ -205,7 +205,7 @@ stats_elite_barbs = {
     "troop_height": 1,
     "troop_cost": 6,
     "troop_count": 2,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.6
 }
 stats_knight = {
     "troop_health": 1450,
@@ -225,7 +225,7 @@ stats_knight = {
     "troop_height": 1,
     "troop_cost": 3,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.6
 }
 stats_mini_pekka = {
     "troop_health": 1129,
@@ -245,7 +245,7 @@ stats_mini_pekka = {
     "troop_height": 1,
     "troop_cost": 4,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.7
 }
 stats_musketeer = {
     "troop_health": 640,
@@ -265,7 +265,7 @@ stats_musketeer = {
     "troop_height": 1,
     "troop_cost": 4,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.5
 }
 stats_pekka = {
     "troop_health": 3400,
@@ -325,7 +325,7 @@ stats_skeletons = {
     "troop_height": 1,
     "troop_cost": 1,
     "troop_count": 3,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.4
 }
 stats_spear_goblin = {
     "troop_health": 110,
@@ -345,7 +345,7 @@ stats_spear_goblin = {
     "troop_height": 1,
     "troop_cost": 2,
     "troop_count": 3,
-    "scale_multiplier": 1
+    "scale_multiplier": 0.5
 }
 
 stats_bats = {
@@ -366,7 +366,7 @@ stats_bats = {
     "troop_height": 1,
     "troop_cost": 2,
     "troop_count": 5,
-    "scale_multiplier": 1,
+    "scale_multiplier": 0.4
 }
 
 """TOWER"""
