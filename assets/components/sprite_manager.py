@@ -29,6 +29,7 @@ class SpriteManager(CacheManager):
             "royal giant": "royal_giant",
             "skeletons": "skeletons",
             "spear goblin": "spear_goblin",
+            "bats": "bats",
         }
     
     def get_sprite(self, troop_name: str, team: int) -> pygame.Surface:
