@@ -17,7 +17,6 @@ class Troop:
         attack_speed,
         attack_range,
         attack_aggro_range,
-        attack_cooldown,
         attack_tile_radius,
         width,
         height,
@@ -39,7 +38,6 @@ class Troop:
         self.attack_speed = attack_speed
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
-        self.attack_cooldown = attack_cooldown
         self.attack_tile_radius = attack_tile_radius
 
         self.troop_type = troop_type
