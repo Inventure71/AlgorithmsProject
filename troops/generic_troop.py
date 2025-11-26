@@ -193,13 +193,16 @@ class Troop:
         return occupancy_grid
 
     """SPRITE LOADING"""
-    def swap_sprite(self, moving=True):
-        if self.arena.frame_count % 2 == 0:
+    def swap_sprite(self, moving=True, reset_attack=False):
+        if self.arena.frame_count % 1 == 0:
             if moving:
                 if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
                     self.sprite_number = 0 # moving sprite 1
                 else:
                     self.sprite_number = 1 # moving sprite 2
+            
+            elif reset_attack:
+                self.sprite_number = 0 # so we reset the attack sprite to the first one
             else:
                 self.sprite_number = 2 # attack sprite
 
@@ -301,7 +304,7 @@ class Troop:
                     # attack_tile_radius
                     # we expand the damage in all directions from the location of this troop
                     # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
-                    self.swap_sprite(moving=False)
+                    self.swap_sprite(moving=False, reset_attack=True)
                     loc = self.is_targetting_something.location
                     for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                         for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
@@ -319,10 +322,11 @@ class Troop:
                                     self.arena.occupancy_grid[loc_to_check].take_damage(self.damage, source_troop=self)
 
                     #self.is_targetting_something.take_damage(self.damage, source_troop=self) old system
-                    self.in_process_attack = self.arena.frame_count
+                    self.in_process_attack = None
                     return True
             else:
                 self.in_process_attack = self.arena.frame_count
+                self.swap_sprite(moving=False, reset_attack=False)
 
             return True
         print(f"{self.name} is dead or inactive, cannot attack")
