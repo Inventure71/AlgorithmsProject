@@ -38,7 +38,7 @@ class Troop:
         self.attack_speed = attack_speed
         self.attack_range = int(attack_range * MULTIPLIER_GRID_HEIGHT)
         self.attack_aggro_range = int(attack_aggro_range * MULTIPLIER_GRID_HEIGHT) # we use this to check if we are in range to get triggered by something
-        self.attack_tile_radius = attack_tile_radius
+        self.attack_tile_radius = int(attack_tile_radius * MULTIPLIER_GRID_HEIGHT) 
 
         self.troop_type = troop_type
         self.troop_favorite_target = troop_favorite_target
@@ -318,6 +318,8 @@ class Troop:
                                 if loc_to_check in self.arena.occupancy_grid_flying:
                                     if self.arena.occupancy_grid_flying[loc_to_check] != self:
                                         self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
+                                        if self.attack_tile_radius == 0:
+                                            continue # we don't want to do damage in both ground and air cells if the radius is 0
 
                             if loc_to_check in self.arena.occupancy_grid:
                                 if self.arena.occupancy_grid[loc_to_check] != self:
