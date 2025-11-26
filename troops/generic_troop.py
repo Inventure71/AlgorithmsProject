@@ -70,8 +70,9 @@ class Troop:
         """ASSET MANAGER"""
         self.asset_manager = asset_manager
         self.scale_multiplier = scale_multiplier
+        self.sprite_number = 0 # 0 indexed for the sprite manager
         # open pygame surface for the sprite
-        self.sprite = self._load_sprite()
+        self.sprite = self.asset_manager.get_troop_sprite(self.name, self.team, self.sprite_number)
 
         """MOVEMENT"""
         self.troop_can_fly = troop_can_fly
@@ -192,29 +193,19 @@ class Troop:
         return occupancy_grid
 
     """SPRITE LOADING"""
-    def get_scaled_sprite(self, visual_width, visual_height):
-        """Get a scaled sprite, using asset manager cache."""
-        if self.asset_manager:
-            return self.asset_manager.get_scaled_sprite(self.sprite, visual_width, visual_height)
-        else:
-            # Fallback if no asset manager provided
-            sprite_width, sprite_height = self.sprite.get_size()
-            scale_x = visual_width / sprite_width
-            scale_y = visual_height / sprite_height
-            scale = min(scale_x, scale_y)
-            scaled_width = int(sprite_width * scale)
-            scaled_height = int(sprite_height * scale)
-            return pygame.transform.scale(self.sprite, (scaled_width, scaled_height))
-    
-    def _load_sprite(self):
-        """Load a sprite image for this troop using asset manager."""
-        if self.asset_manager:
-            return self.asset_manager.get_troop_sprite(self.name, self.team)
-        else:
-            # Fallback: create colored surface
-            surface = pygame.Surface((self.width, self.height))
-            surface.fill(self.color)
-            return surface
+    def swap_sprite(self, moving=True):
+        if self.arena.frame_count % 2 == 0:
+            if moving:
+                if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
+                    self.sprite_number = 0 # moving sprite 1
+                else:
+                    self.sprite_number = 1 # moving sprite 2
+            else:
+                self.sprite_number = 2 # attack sprite
+
+            print(f"{self.name} swapping sprite to {self.sprite_number}")
+
+            self.sprite = self.asset_manager.get_troop_sprite(self.name, self.team, self.sprite_number)
 
     """MAIN FUNCTIONS"""
     def move_to_tower(self, got_blocked=False):
@@ -301,6 +292,7 @@ class Troop:
                 #print(f"{self.name} moves to {path[steps_done]}")
                 self.current_path_index = steps_done
                 self.location = path[steps_done]  
+                self.swap_sprite(moving=True)
     
     def attack(self):
         if self.is_alive and self.is_active:
@@ -309,6 +301,7 @@ class Troop:
                     # attack_tile_radius
                     # we expand the damage in all directions from the location of this troop
                     # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
+                    self.swap_sprite(moving=False)
                     loc = self.is_targetting_something.location
                     for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                         for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):

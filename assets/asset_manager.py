@@ -25,13 +25,13 @@ class AssetManager:
     
     
     # these delegate to the appropriate specialized manager
-    def get_troop_sprite(self, troop_name: str, team: int):
+    def get_troop_sprite(self, troop_name: str, team: int, sprite_number: int = 1):
         """Get troop sprite (delegates to SpriteManager)."""
-        return self.sprites.get_sprite(troop_name, team)
+        return self.sprites.get_sprite(troop_name, team, sprite_number)
     
-    def get_scaled_sprite(self, sprite, width: int, height: int):
+    def get_scaled_sprite(self, sprite, sprite_number, width: int, height: int):
         """Scale sprite (delegates to SpriteManager)."""
-        return self.sprites.get_scaled_sprite(sprite, width, height)
+        return self.sprites.get_scaled_sprite(sprite, sprite_number, width, height)
     
     def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True):
         """Get tower assets (delegates to TowerAssetManager)."""
@@ -102,17 +102,17 @@ class AssetManager:
             for mgr in managers.values():
                 mgr.clear_cache()
     
-        def get_cache_stats(self) -> Dict[str, int]:
-            """Get cache statistics for all managers."""
-            return {
-                'sprites': self.sprites.cache_size(),
-                'sprites_scaled': len(self.sprites._scaled_cache),
-                'towers': self.towers.cache_size(),
-                'towers_scaled': len(self.towers._scaled_cache),
-                'ui': self.ui.cache_size(),
-                'ui_scaled': len(self.ui._scaled_cache),
-                'ui_overlays': len(self.ui._overlay_cache),
-                'ui_segments': len(self.ui._segment_cache),
-                'text': self.text.cache_size(),
-                'fonts': len(self.text._font_cache)
-            }
+    def get_cache_stats(self) -> Dict[str, int]:
+        """Get cache statistics for all managers."""
+        return {
+            'sprites': self.sprites.cache_size(),
+            'sprites_scaled': len(self.sprites._scaled_cache),
+            'towers': self.towers.cache_size(),
+            'towers_scaled': len(self.towers._scaled_cache),
+            'ui': self.ui.cache_size(),
+            'ui_scaled': len(self.ui._scaled_cache),
+            'ui_overlays': len(self.ui._overlay_cache),
+            'ui_segments': len(self.ui._segment_cache),
+            'text': self.text.cache_size(),
+            'fonts': len(self.text._font_cache)
+        }

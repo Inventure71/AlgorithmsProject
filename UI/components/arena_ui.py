@@ -74,7 +74,7 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
                     rect = pygame.Rect(x_pos, y_pos, width, height)
                     pygame.draw.rect(screen, colors[9], rect)
 
-def draw_units(arena, screen, tile_size):
+def draw_units(arena, screen, tile_size, asset_manager):
     # using the set() to get unique troops (avoid drawing same troop multiple times)
     for troop in sort_for_visualization(arena.unique_troops, ascending_order=True):
         if troop.location is None:
@@ -105,7 +105,7 @@ def draw_units(arena, screen, tile_size):
             image_y = cell_center_y - visual_height // 2
 
             # get scaled sprite from cache - now scales to exact dimensions uniformly
-            scaled_sprite = troop.get_scaled_sprite(visual_width, visual_height)
+            scaled_sprite = asset_manager.get_scaled_sprite(troop.sprite, troop.sprite_number, visual_width, visual_height)
             
             # draw the sprite at the calculated position (no offset needed since it fills the area)
             screen.blit(scaled_sprite, (image_x, image_y))

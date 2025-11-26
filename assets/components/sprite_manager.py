@@ -11,8 +11,8 @@ class SpriteManager(CacheManager):
     def __init__(self, assets_path: str):
         super().__init__()
         self.assets_path = assets_path
-        self._scaled_cache: Dict[Tuple[int, int, int], pygame.Surface] = {}
-        self._standardized_cache: Dict[Tuple[str, int], pygame.Surface] = {}
+        self._scaled_cache: Dict[Tuple[int, int, int, int], pygame.Surface] = {}
+        self._standardized_cache: Dict[Tuple[str, int, int], pygame.Surface] = {}
         
         # troop name to folder mapping
         self.troop_folder_map = {
@@ -32,21 +32,28 @@ class SpriteManager(CacheManager):
             "bats": "bats",
         }
     
-    def get_sprite(self, troop_name: str, team: int) -> pygame.Surface:
-        """Load a troop sprite for a specific team, standardized to STANDARD_SPRITE_SIZE."""
-        cache_key = (troop_name, team)
+    def get_sprite(self, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
+        """
+        load a troop sprite for a specific team and sprite variant, standardized to STANDARD_SPRITE_SIZE.
+        
+        Args:
+            troop_name: Name of the troop
+            team: Team number (1 or 2)
+            sprite_number: Which sprite to load (1, 2, or 3 for walking1, walking2, attack)
+        """
+        cache_key = (troop_name, team, sprite_number)
         
         if self.has_cached(cache_key):
             return self.get_cached(cache_key)
         
-        sprite = self._load_sprite(troop_name, team)
-        standardized_sprite = self._standardize_sprite(sprite, troop_name, team)
+        sprite = self._load_sprite(troop_name, team, sprite_number)
+        standardized_sprite = self._standardize_sprite(sprite, troop_name, team, sprite_number)
         self.set_cached(cache_key, standardized_sprite)
         return standardized_sprite
 
-    def _standardize_sprite(self, sprite: pygame.Surface, troop_name: str, team: int) -> pygame.Surface:
+    def _standardize_sprite(self, sprite: pygame.Surface, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
         """Standardize a sprite to STANDARD_SPRITE_SIZE while preserving aspect ratio."""
-        cache_key = (troop_name, team)
+        cache_key = (troop_name, team, sprite_number)
         
         if cache_key in self._standardized_cache:
             return self._standardized_cache[cache_key]
@@ -78,11 +85,11 @@ class SpriteManager(CacheManager):
         self._standardized_cache[cache_key] = standardized_sprite
         return standardized_sprite
     
-    def get_scaled_sprite(self, sprite: pygame.Surface, width: int, height: int) -> pygame.Surface:
+    def get_scaled_sprite(self, sprite: pygame.Surface, sprite_number: int, width: int, height: int) -> pygame.Surface:
         """Get a scaled version of a sprite with uniform scaling to fill the entire area."""
         # scale uniformly to exact target dimensions (no aspect ratio preservation)
         # this ensures all troops fill their designated area consistently
-        cache_key = (id(sprite), width, height)
+        cache_key = (id(sprite), sprite_number, width, height)
         
         if cache_key in self._scaled_cache:
             return self._scaled_cache[cache_key]
@@ -92,7 +99,7 @@ class SpriteManager(CacheManager):
         self._scaled_cache[cache_key] = scaled_sprite
         return scaled_sprite
 
-    def _load_sprite(self, troop_name: str, team: int) -> pygame.Surface:
+    def _load_sprite(self, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
         """Internal method to load sprite from disk."""
         troop_folder = self.troop_folder_map.get(troop_name.lower())
         if not troop_folder:
@@ -103,12 +110,20 @@ class SpriteManager(CacheManager):
         if not os.path.exists(sprite_path):
             return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
         
-        sprite_files = sorted([f for f in os.listdir(sprite_path) if f.endswith('.png')])
+        sprite_files = sorted([f for f in os.listdir(sprite_path) if f.endswith('.png')]) #TODO: use a core sorting algorithm
+
         if not sprite_files:
             return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
         
+        # sprite_index = sprite_number 
+        if len(sprite_files) > sprite_number:
+            sprite_index = sprite_number
+        else:
+            sprite_index = 0 # fallback to first sprite
+            print(f"Sprite number {sprite_number} not found, falling back to first sprite for troop {troop_name}")
+
         try:
-            sprite_file = os.path.join(sprite_path, sprite_files[0])
+            sprite_file = os.path.join(sprite_path, sprite_files[sprite_index])
             return pygame.image.load(sprite_file).convert_alpha()
         except Exception as e:
             print(f"Error loading sprite: {e}")

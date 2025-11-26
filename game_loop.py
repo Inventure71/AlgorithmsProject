@@ -11,6 +11,11 @@ from troops.generic_troop import Troop
 from assets.asset_manager import AssetManager
 import pygame
 
+"""
+TODO: implement wizard
+TODO: implement baby dragon
+"""
+
 colors = {
     0: (0, 0, 0),  # none
     1: (0, 214, 47),  # grass
@@ -86,7 +91,7 @@ while looping: # bigger loop for the game loop
     Card(name="musketeer 1", color="yellow", troop_class=Troop, troop_name="musketeer", asset_manager=asset_manager),
     Card(name="pekka 1", color="orange", troop_class=Troop, troop_name="pekka", asset_manager=asset_manager),
     Card(name="bats 1", color="green", troop_class=Troop, troop_name="bats", asset_manager=asset_manager),
-    Card(name="bats 2", color="green", troop_class=Troop, troop_name="bats", asset_manager=asset_manager),
+    Card(name="skeleton 1", color="green", troop_class=Troop, troop_name="skeletons", asset_manager=asset_manager),
     ]
 
     deck_p1 = Deck(cards)
@@ -163,7 +168,7 @@ while looping: # bigger loop for the game loop
         screen.fill((66, 49, 22))
         draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=selected_card, team=1)        
         game_tick()
-        draw_units(arena, screen, tile_size)
+        draw_units(arena, screen, tile_size, asset_manager)
 
         if DRAW_ATTACK_RANGES_DEBUG:
             draw_attack_ranges(arena, tile_size, screen)
@@ -205,7 +210,7 @@ while looping: # bigger loop for the game loop
 
         print("Match over")
         draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=selected_card, team=1)
-        draw_units(arena, screen, tile_size)
+        draw_units(arena, screen, tile_size, asset_manager)
 
         if finish_battle_screen is None:
             finish_battle_screen = FinishBattleScreen(arena, asset_manager, screen)

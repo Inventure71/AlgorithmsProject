@@ -57,7 +57,7 @@ class Arena:
         self.one_minute = TICKS_PER_SECOND*60
         self.time_left = self.one_minute*3 # the match is supposed to be 3 minutes
 
-        self.elixir_multiplier = 1.0
+        self.elixir_multiplier = 10.0
 
         # remove 
         #self.time_left = 120
