@@ -1,5 +1,5 @@
 import pygame
-from UI.components.button import Button
+from UI.components.unit_components.button import Button
 
 class FinishBattleScreen:
     def __init__(self, arena, asset_manager, screen):
@@ -15,7 +15,8 @@ class FinishBattleScreen:
         self.winner_team = None
         self.number_of_crowns = None
         self.initiate_screen()
-        
+    
+    """HELPER FUNCTIONS"""
     def initiate_screen(self):
         if 0 not in self.arena.towers_P1:
             self.winner_team = 2
@@ -60,14 +61,13 @@ class FinishBattleScreen:
             self.go_to_main_menu
         ))
         
-        
-
     def go_to_main_menu(self):
         self.main_menu_clicked = True
     
     def restart(self):
         self.restart_clicked = True
 
+    """LOOP"""
     def draw(self):
         # get size of pygame display
         display_width, display_height = pygame.display.get_surface().get_size()
@@ -134,7 +134,6 @@ class FinishBattleScreen:
         for button in self.buttons:
             button.draw(self.screen)
        
-
     def tick(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

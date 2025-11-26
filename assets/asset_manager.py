@@ -82,8 +82,7 @@ class AssetManager:
         """Render text (delegates to TextRenderer)."""
         return self.text.render_text(text, size, color)
     
-    # management methods
-    
+    """MANAGEMENT METHODS"""
     def clear_cache(self, manager: Optional[str] = None):
         """
         Clear caches.

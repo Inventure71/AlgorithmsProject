@@ -22,3 +22,5 @@ assets/__pycache__/
 assets/components/__pycache__/
 **/__pycache__
 **/.DS_Store
+
+old_stuff_for_comparison/
