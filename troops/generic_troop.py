@@ -304,7 +304,7 @@ class Troop:
                     # attack_tile_radius
                     # we expand the damage in all directions from the location of this troop
                     # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
-                    self.swap_sprite(moving=False, reset_attack=True)
+                    self.swap_sprite(moving=False, reset_attack=False)
                     loc = self.is_targetting_something.location
                     for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                         for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
@@ -324,6 +324,10 @@ class Troop:
                     #self.is_targetting_something.take_damage(self.damage, source_troop=self) old system
                     self.in_process_attack = None
                     return True
+            
+                elif (self.arena.frame_count-self.in_process_attack ) >= self.attack_speed * 0.40:
+                    self.swap_sprite(moving=False, reset_attack=True)
+            
             else:
                 self.in_process_attack = self.arena.frame_count
                 self.swap_sprite(moving=False, reset_attack=False)
