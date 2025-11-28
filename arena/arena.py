@@ -20,7 +20,7 @@ class Arena:
     def __init__(self, height): # in pixels == cells? num_cells = width / cell_size
         # enforce height multiple of 16 and at least 32
         if height % 16 != 0 and height >= 32:
-            raise ("height of arena needs to be a multiple of 16!!!")
+            raise ("height of arena needs to be a multiple of 16!!! but bigger than 32")
 
         self.height = height
         self.width = int(height/16 * 9) # ratio of width to height
@@ -57,7 +57,7 @@ class Arena:
         self.one_minute = TICKS_PER_SECOND*60
         self.time_left = self.one_minute*3 # the match is supposed to be 3 minutes
 
-        self.elixir_multiplier = 10.0
+        self.elixir_multiplier = 1.0
 
         # remove 
         #self.time_left = 120
@@ -292,7 +292,8 @@ class Arena:
         """
         Remove a troop from the occupancy grid (clean up all cells it occupies).
         """
-        self.unique_troops.remove(troop)
+        if troop in self.unique_troops:
+            self.unique_troops.remove(troop)
         occupied_cells = troop.occupied_cells({})
         for cell in occupied_cells:
             occupancy_grid = troop.get_occupancy_grid()
@@ -308,10 +309,6 @@ class Arena:
             if troop.name.startswith("Tower"):
                 if troop.team == tower_troop.team and troop.is_active == False and troop.is_alive:
                     troop.is_active = True
-                    if troop.team == 1:
-                        self.central_tower_P1_active = True
-                    else: 
-                        self.central_tower_P2_active = True
 
         self.unique_troops.discard(tower_troop)
         occupied_cells = tower_troop.occupied_cells({})

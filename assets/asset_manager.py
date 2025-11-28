@@ -57,6 +57,10 @@ class AssetManager:
         """Get scaled card (delegates to UIAssetManager)."""
         return self.ui.get_scaled_card(troop_name, width, height)
     
+    def get_menu_background(self, width: int, height: int):
+        """Get menu background (delegates to UIAssetManager)."""
+        return self.ui.get_menu_background(width, height)
+
     def get_arena_background(self, width: int, height: int):
         """Get arena background (delegates to UIAssetManager)."""
         return self.ui.get_arena_background(width, height)

@@ -63,6 +63,23 @@ class UIAssetManager(CacheManager):
         self._scaled_cache[cache_key] = scaled
         return scaled
     
+    def get_menu_background(self, width: int, height: int) -> Optional[pygame.Surface]:
+        """Load and scale arena menu background."""
+        cache_key = ("menu_background", width, height)
+        
+        if cache_key in self._scaled_cache:
+            return self._scaled_cache[cache_key]
+        
+        bg_path = os.path.join(self.assets_path, "UI", "menu_background.png")
+        background = self._load_image(bg_path, convert_alpha=False)
+        
+        if background:
+            scaled = pygame.transform.scale(background, (width, height))
+            self._scaled_cache[cache_key] = scaled
+            return scaled
+        
+        return None
+    
     def get_arena_background(self, width: int, height: int) -> Optional[pygame.Surface]:
         """Load and scale arena background."""
         cache_key = ("arena_bg", width, height)
