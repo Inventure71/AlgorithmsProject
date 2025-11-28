@@ -206,8 +206,6 @@ class Troop:
             else:
                 self.sprite_number = 2 # attack sprite
 
-            print(f"{self.name} swapping sprite to {self.sprite_number}")
-
             self.sprite = self.asset_manager.get_troop_sprite(self.name, self.team, self.sprite_number)
 
     """MAIN FUNCTIONS"""

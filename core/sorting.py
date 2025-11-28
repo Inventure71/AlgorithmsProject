@@ -1,4 +1,17 @@
 
+def merge_by_key(left, right, key):
+    result, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if key(left[i]) <= key(right[j]):
+            result.append(left[i]); i += 1
+        else:
+            result.append(right[j]); j += 1
+    return result + left[i:] + right[j:]
+
+def merge_sort_by_key(items, key):
+    if len(items) <= 1: return items
+    mid = len(items) // 2
+    return merge_by_key(merge_sort_by_key(items[:mid], key), merge_sort_by_key(items[mid:], key), key)
 
 def sort_for_visualization(unique_troops, ascending_order=True):
     # we only want from top to bottom or viceversa we ignore the horizontal position

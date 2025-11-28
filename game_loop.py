@@ -2,6 +2,7 @@ from UI.components.arena_ui import draw_arena, draw_units
 from UI.components.hand_ui import draw_hand, draw_elixir_icon
 from UI.components.debug_ui import draw_attack_ranges
 from UI.finish_battle_screen import FinishBattleScreen
+from UI.menu import run_deck_builder
 from arena.arena import Arena
 from constants import *
 from deck.card import Card
@@ -14,6 +15,8 @@ import pygame
 """
 TODO: implement wizard
 TODO: implement baby dragon
+
+TODO: check if we can implement a graph for the location of the troops to see the distances or even a heap
 """
 
 colors = {
@@ -94,13 +97,19 @@ while looping: # bigger loop for the game loop
     Card(name="skeleton 1", color="green", troop_class=Troop, troop_name="skeletons", asset_manager=asset_manager),
     ]
 
-    deck_p1 = Deck(cards)
+    # show deck builder menu first
+    setup_arena()  # initialize pygame and screen
+    deck_p1 = run_deck_builder(screen, asset_manager)
+    if deck_p1 is None:
+        break  # user closed window
+
+    #deck_p1 = Deck(cards)
     deck_p1.shuffle_cards()
     deck_p2 = Deck(cards)
     deck_p2.shuffle_cards()
 
     finish_battle_screen = None
-    setup_arena()
+    setup_arena() # check if this is needed
     player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
     player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
     player_1.setup_hand()
