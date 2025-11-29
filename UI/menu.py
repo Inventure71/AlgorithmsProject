@@ -76,7 +76,7 @@ def run_deck_builder(screen, asset_manager):
         if dimmed: screen.blit(asset_manager.get_card_overlay(CW, CH, (0, 0, 0, 160)), (x, y))
     
     
-    btn_battle = Button(W//2 - 70, H - 60, 140, 45, "Battle", asset_manager.get_font(24), (50, 150, 50), on_confirm)
+    btn_battle = Button(W//2 - 70, H - 160, 140, 45, "Battle", asset_manager.get_font(24), (50, 150, 50), on_confirm)
     btn_sort = Button(W//2 + 100, deck_bottom + 10, 60, 35, "Sort", asset_manager.get_font(18), (64, 147, 166), on_sort)
     btn_auto_fill = Button(W//2 - 165, deck_bottom + 10, 60, 35, "Auto Fill", asset_manager.get_font(18), (27, 147, 54), on_auto_fill)
 
