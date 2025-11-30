@@ -2,7 +2,14 @@ import pygame
 from assets.asset_manager import AssetManager
 
 def draw_hand(player, rows, cols, tile_size, asset_manager, screen, selected_card=None):
-    """Draw the player's hand at the bottom of the screen"""
+    """
+    Draw the player's hand at the bottom of the screen
+
+    - Time: Worst case O(h), Average case O(h) where h is hand size (4) draws each card
+    - Space: O(h) for card_rects list
+
+    TODO: what about alternative: Could use arrays for card positioning; immediate mode is simpler for small hand size
+    """
     if not player.hand:
         return
     
@@ -59,6 +66,12 @@ def draw_hand(player, rows, cols, tile_size, asset_manager, screen, selected_car
     return card_rects
 
 def draw_elixir_icon(icon_x, icon_y, icon_size, asset_manager, screen, text_value=None, text_size=18, text_color=(255, 255, 255)):
+    """
+    Draw elixir icon with optional text overlay
+
+    - Time: Worst case O(1), Average case O(1) cached sprite and text lookups
+    - Space: O(1) uses cached surfaces
+    """
     elixir_icon = asset_manager.get_elixir_icon(icon_size)
     
     if elixir_icon:
@@ -76,7 +89,12 @@ def draw_elixir_icon(icon_x, icon_y, icon_size, asset_manager, screen, text_valu
             screen.blit(text_surface, (text_x, text_y))
 
 def draw_elixir_bar(player, hand_start_y, total_width, card_height, start_x, asset_manager, screen):
-    """Draw the purple segmented elixir bar with icon + number (Clash Royale style)."""
+    """
+    Draw the purple segmented elixir bar with icon plus number Clash Royale style
+
+    - Time: Worst case O(e), Average case O(e) where e is max_elixir (10) draws each segment
+    - Space: O(1) uses cached segment positions
+    """
     if not player:
         return
 

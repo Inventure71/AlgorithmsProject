@@ -2,6 +2,9 @@ import math
 from deck.stats import stats
 
 class Card:
+    """
+    Represents a playable card that spawns troops
+    """
     def __init__(self, 
     name, 
     color, 
@@ -38,14 +41,23 @@ class Card:
 
     def get_card_image(self, width: int, height: int):
         """
-        Get the card image scaled to specified dimensions.
-        Returns None if no image is available.
+        Get the card image scaled to specified dimensions
+        Returns None if no image is available
+
+        - Time: Worst case O(w*h), Average case O(1) cached lookup, O(w*h) on first load for scaling
+        - Space: O(1) returns cached reference
         """
         if self.asset_manager:
             return self.asset_manager.get_scaled_card_image(self.troop_name, width, height)
         return None
 
     def create_troops(self, team):
+        """
+        Creates troop instances for this card
+        
+        - Time: O(c) where c is troop_count creates c troop objects
+        - Space: O(c) for the troops list
+        """
         troops = []
         if self.troop_count is None or self.troop_count < 1:
             raise ValueError(f"Troop count for {self.troop_name} is not valid")
@@ -75,6 +87,12 @@ class Card:
         return troops
 
     def get_formation_positions(self, location, troop_count, enforce_valid=False, arena=None, team=None):
+        """
+        Calculates grid positions for multi-troop formations.
+        
+        - Time: O(c * tw * th) where c is troop count and tw/th are troop dimensions validates each position
+        - Space: O(c) for positions list
+        """
         # we want to do rows of sqrt(troop_count)
         
         rows = int(math.sqrt(troop_count))
@@ -114,7 +132,12 @@ class Card:
         return positions
 
     def _is_formation_position_valid(self, position, arena, team):
-        """Check if a single troop position is valid (all cells it occupies must be placable)"""
+        """
+        Check if a single troop position is valid (all cells it occupies must be placable)
+
+        - Time: Worst case = Average case = O(tw * th) where tw/th are troop dimensions checks each cell
+        - Space: O(1) no additional allocations
+        """
         if not arena:
             return True
         

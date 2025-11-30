@@ -4,8 +4,7 @@ from constants import *
 
 
 """
-DONE: we craft only half of the arena and then mirror it to the other half.
-TODO: fix issue with sizes smaller than 32 
+DONE: we craft only half of the arena and then mirror it to the other half
 """
 
 """
@@ -14,13 +13,22 @@ cell = (int, int) means (row, col) in a way (y,x)
 """
 
 class Arena:
-    """
-    We are going to do all the logic in cells, the pixel management is done in the visualizer.
-    """
+    """TODO: Fun fact: We are going to do all the logic in cells, the pixel management is done in the visualizer."""
+
     def __init__(self, height): # in pixels == cells? num_cells = width / cell_size
+        """
+        Initializes arena grid, towers, and bookkeeping structures
+
+        - Time: Worst case = Average case = O(h * w) 
+                where h is height and w is width
+        - Space: O(h * w) for the grid storage
+        """
+        # safety checks
+        if MULTIPLIER_GRID_HEIGHT <= 0:
+            raise ValueError("MULTIPLIER_GRID_HEIGHT must be greater than 0")
         # enforce height multiple of 16 and at least 32
         if height % 16 != 0 and height >= 32:
-            raise ("height of arena needs to be a multiple of 16!!! but bigger than 32")
+            raise ("height of arena needs to be a multiple of 16!!! and bigger or equal than 32")
 
         self.height = height
         self.width = int(height/16 * 9) # ratio of width to height
@@ -59,10 +67,14 @@ class Arena:
 
         self.elixir_multiplier = 1.0
 
-        # remove 
-        #self.time_left = 120
-
     def generate_towers(self):
+        """
+        Generates all player one towers in their base positions
+
+        - Time: Worst case = Average case O(t * (tw * th)) 
+                where t is number of towers (3), tw/th are tower width/height
+        - Space: O(1) additional - because it modifies existing grid in place
+        """
         # king tower bottom side
         # 1/32 from the bottom
         # 7/18 from the left 
@@ -95,6 +107,16 @@ class Arena:
         generate_tower(self.width, self.height, self, self.asset_manager, 1, 1, distance_from_left, distance_from_bottom)
     
     def world_generation(self):
+        """
+        Generates the full arena layout including river, towers, bridges, and mirroring
+
+        - Time: Worst case = Average case = O(h * w) 
+                river generation is O(river_h * w)
+                towers O(constant) 
+                bridges O(constant)
+                mirroring O(h/2 * w)
+        - Space: O(1) additional - because all operations modify existing grid
+        """
         generate_river(self.height, self.height_of_river, self)
         self.generate_towers()
         generate_mock_bridges(self.width, self.height, self, self.height_of_river)
@@ -102,6 +124,12 @@ class Arena:
     
     """utils""" 
     def tick(self):
+        """
+        Advances arena state by one frame and handles match timing logic
+
+        - Time: Worst case = Average case = O(1)
+        - Space: O(1)
+        """
         self.frame_count += 1
         self.time_left -= 1
         if self.game_finished:
@@ -119,6 +147,12 @@ class Arena:
         return True
 
     def is_movable_cell(self, row, col, moving_troop=None, is_flying=False):
+        """
+        Checks if a troop can move into a given cell
+
+        - Time: Worst case = Average case = O(1) - because bounds check, grid lookup, and hash table lookup are all constant time.
+        - Space: O(1)
+        """
         if not is_cell_in_bounds((row, col), self.grid):
             return False
 
@@ -133,6 +167,14 @@ class Arena:
         return True
     
     def is_placable_cell(self, row, col, team, moving_troop=None, is_flying=False):
+        """
+        Checks if a troop can be placed on a given cell for a specific team
+
+        - Time: Worst case = Average case = O(1) - because constant time checks on bounds, grid value, hash table, and tower dictionary.
+        - Space: O(1)
+
+        TODO: remember, we could techically precompute the valid placement areas as a separate grid, our dynamic check handles game state changes automatically.
+        """
         if not is_cell_in_bounds((row, col), self.grid):
             return False
         if not is_walkable(row, col, self.grid, is_flying=is_flying):
@@ -227,6 +269,13 @@ class Arena:
         return True
 
     def spawn_unit(self, troop, cell: (int, int)):
+        """
+        Spawns a troop into the arena and marks all occupied cells
+
+        - Time: Worst case = Average case = O(tw * th) 
+                where tw/th are troop width/height
+        - Space: O(tw * th) for occupied cells dictionary entries.
+        """
         if not is_cell_in_bounds(cell, self.grid):
             return False
 
@@ -240,7 +289,7 @@ class Arena:
         troop.location = cell
         troop.arena = self
 
-        occupied_cells = troop.occupied_cells({})
+        occupied_cells = troop.occupied_cells()
         # checking if all the other cells are valid   
 
         for occupied_cell in occupied_cells:
@@ -257,21 +306,28 @@ class Arena:
     
     def move_unit(self, troop, new_cell: (int, int)):
         """
-        Used to move a troop from old cell in the occupancy_grid
+        Used to move a troop from old cell in the occupancy_grid.
+
+        - Time: Worst case = Average case = O(tw * th) 
+                where tw/th are troop width/height 
+                because it iterates over occupied cells twice (old + new)
+        - Space: O(tw * th) for temporary occupied cells dictionaries
+
+        TODO: remember alternative: Could track only boundary cells for collision; our approach works for any troop shape.
         """
         if not is_cell_in_bounds(new_cell, self.grid):
             return False
         
         old_location = troop.location # we save the old location to move it back later
         troop.location = new_cell  # temporarily set to calculate occupied cells
-        new_occupied_cells = troop.occupied_cells({})
+        new_occupied_cells = troop.occupied_cells()
         troop.location = old_location  # we move it back to the old location
         
         for cell in new_occupied_cells:
             if not self.is_movable_cell(cell[0], cell[1], moving_troop=troop, is_flying=troop.troop_can_fly):
                 return False
         
-        old_occupied_cells = troop.occupied_cells({})
+        old_occupied_cells = troop.occupied_cells()
 
         occupancy_grid = troop.get_occupancy_grid()
 
@@ -291,10 +347,16 @@ class Arena:
     def remove_unit(self, troop):
         """
         Remove a troop from the occupancy grid (clean up all cells it occupies).
+
+        - Time: Worst case = Average case = O(tw * th) 
+                where tw/th are troop width/height
+        - Space: O(1) - because it just modifies existing structures
+
+        TODO: what does this mean? Could use reference counting for automatic cleanup; immediate removal prevents stale references.
         """
         if troop in self.unique_troops:
             self.unique_troops.remove(troop)
-        occupied_cells = troop.occupied_cells({})
+        occupied_cells = troop.occupied_cells()
         for cell in occupied_cells:
             occupancy_grid = troop.get_occupancy_grid()
             if cell in occupancy_grid and occupancy_grid[cell] == troop: # kind of unecessary double check but better be safe
@@ -304,14 +366,21 @@ class Arena:
     def remove_tower(self, tower_troop):
         """
         Remove a tower from the occupancy grid (clean up all cells it occupies).
+
+        - Time: Worst case = Average case = O(tw * th)
+                where tw/th are tower width/height (looping over occupied cells)
+        - Space: O(tw * th) for the occupied_cells collection
         """
-        for troop in self.unique_troops:
-            if troop.name.startswith("Tower"):
-                if troop.team == tower_troop.team and troop.is_active == False and troop.is_alive:
-                    troop.is_active = True
+
+        towers = self.towers_P1 if tower_troop.team == 1 else self.towers_P2 
+        # before we were using self.unique_troops but we can use the towers_P1 and towers_P2 dictionaries
+        # now we use O(1) lookup time instead of O(n)
+        if 0 in towers and tower_troop.tower_number != 0: # if it is 0 we are destroying the king tower so no need to activate it
+            if not towers[0].is_active and towers[0].is_alive:
+                towers[0].is_active = True
 
         self.unique_troops.discard(tower_troop)
-        occupied_cells = tower_troop.occupied_cells({})
+        occupied_cells = tower_troop.occupied_cells()
         if tower_troop.team == 1:
             self.towers_P1.pop(tower_troop.tower_number)
         else:

@@ -4,6 +4,12 @@ from troops.generic_troop import Troop
 from arena.utils.random_utils import is_cell_in_bounds, extract_tower_stats
 
 def generate_river(height, height_of_river, arena):
+    """
+    Generates river cells across the middle of the arena
+    
+    - Time: O(river_h * w) where river_h is river height and w is arena width fills each river cell
+    - Space: O(1) modifies grid in place
+    """
     # center is always going to be in the middle of an even number of cells, but there isn't a precise one so we handle both 
     # first center found is lower center (between the two even)
 
@@ -28,6 +34,12 @@ def generate_tower(
     distance_from_left = 3,
     distance_from_bottom = 5
     ):
+    """
+    Creates a tower troop and marks its cells on the arena grid and occupancy grid
+
+    - Time: Worst case = Average case = O(tw * th) where tw/th are tower dimensions
+    - Space: O(1) additional
+    """
 
     if team == 1:
         tower_grid_type = TOWER_P1
@@ -90,7 +102,10 @@ def generate_tower(
 
 def generate_mock_bridges(width, height, arena, height_of_river, bridge_width=1):
     """
-    TODO: ONLY FOR DEBUGGING WE ARE GOING TO REMOVE THIS LATER AND MAKE IT GOOD
+    Creates bridge cells at two positions across the river
+
+    - Time: Worst case = Average case = O(river_h * bridge_w) where river_h is river height and bridge_w is bridge width
+    - Space: O(1)
     """
     # scale bridge width to match arena size (similar to tower scaling)
     scaled_bridge_width = int(width/18 * bridge_width)
@@ -116,11 +131,17 @@ def generate_mock_bridges(width, height, arena, height_of_river, bridge_width=1)
     return True
 
 def mirror_arena(height, width, arena, asset_manager, team=2):
+    """
+    Mirrors the bottom half of the arena to the top half, creating symmetric arena
+
+    - Time: Worst case = Average case = O(h/2 * w + t * tw * th) where h/w are arena dimensions, t is tower count, tw/th are tower dimensions
+    - Space: O(t)
+    """
     lower_center = height//2 
     print("lower center", lower_center)
 
     # find all team 1 towers from unique_troops (more reliable than scanning grid)
-    for tower in list(arena.unique_troops):
+    for tower in list(arena.unique_troops): # TODO: check fi we can use self.towers_P1
         if tower.is_tower and tower.team == 1:
             # extract tower type from name
             result = re.search(r'Tower\s*(-?\d+)', tower.name)

@@ -13,6 +13,14 @@ colors = {
 }
 
 def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=None, DRAW_PLACABLE_CELLS=False, team=1):
+    """
+    Draws the arena grid and optional placeable cell overlay
+
+    - Time: Worst case O(h * w), Average case O(h * w) when rebuilding background, O(1) when using cached background
+    - Space: O(h * w) for cached background surface
+
+    TODO: what about alternative: Could use multidimensional arrays for grid storage; full redraw is simpler and GPU-accelerated blit is fast
+    """
     global arena_background_surface
 
     arena_width = int(cols * tile_size)
@@ -75,6 +83,14 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
                     pygame.draw.rect(screen, colors[9], rect)
 
 def draw_units(arena, screen, tile_size, asset_manager):
+    """
+    Draws all troops in render order (top to bottom for proper layering)
+
+    - Time: Worst case O(n log n), Average case O(n log n) for sorting plus O(n) for drawing where n is number of troops
+    - Space: O(n) for sorted list
+
+    TODO: what about alternative: Could use linked lists for troop ordering; sorting by Y is simpler for 2D
+    """
     # using the set() to get unique troops (avoid drawing same troop multiple times)
     for troop in sort_for_visualization(arena.unique_troops, ascending_order=True):
         if troop.location is None:
@@ -113,7 +129,14 @@ def draw_units(arena, screen, tile_size, asset_manager):
         draw_healthbar(troop, screen, tile_size, arena)
 
 def draw_tower(troop, screen, tile_size):
-    """Draw a tower with its assets centered on the tower's grid position."""
+    """
+    Draw a tower with its assets centered on the tower's grid position
+
+    - Time: Worst case O(1), Average case O(1) cached sprite lookup and single blit operation
+    - Space: O(1) uses cached sprites
+
+    TODO: what about alternative: Could use arrays for asset storage; direct blitting is simpler for static towers
+    """
     if not troop.asset_manager or troop.tower_number is None:
         # Fallback to colored rectangle
         visual_width = int(troop.width * tile_size)
@@ -199,7 +222,12 @@ def draw_tower(troop, screen, tile_size):
         pygame.draw.rect(screen, troop.color, (tower_top_left_x, tower_top_left_y, tower_width, tower_height))
 
 def draw_healthbar(troop, screen, tile_size, arena):
-    """Draw a healthbar above a troop or tower"""
+    """
+    Draw a healthbar above a troop or tower
+
+    - Time: Worst case O(1), Average case O(1) constant calculations and rectangle draws
+    - Space: O(1) no allocations
+    """
     if not troop.is_alive or troop.location is None:
         return
     

@@ -6,6 +6,14 @@ from core.node import Node
 
 # we modified this function to take into account the width of the troop so that we can check if the path is valid for the troop if it isn't 1 sized
 def get_valid_neighbors(cell: (int, int), grid, collision_grid, self_troop, include_non_walkable=False, include_diagonals=False):
+    """
+    Gets valid neighboring cells for pathfinding, accounting for troop size
+
+    - Time: Worst case = Average case = O(d * tw * th) where d is directions 4 or 8 and tw/th are troop dimensions
+    - Space: O(d)
+
+    TODO: is the alternative better? Alternative: Could use DFS for neighbor finding; BFS exploration is more systematic for grid-based movement
+    """
     if include_diagonals:
         # these are the 4 directions --> up, down, left, right, top_right, bottom_right, top_right, bottom_left
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1,1), (-1,1), (1,-1)]
@@ -43,14 +51,19 @@ def get_valid_neighbors(cell: (int, int), grid, collision_grid, self_troop, incl
     return neighbors
 
 
-def find_path_bfs(start, grid, collision_grid, target_grid, self_troop, goal_cell=None, cell_type=None, one_tile_range=True, include_diagonals=True): # one tile range means we are going to check for adiencent impossible to reach points 
+def find_path_bfs(start, grid, collision_grid, target_grid, self_troop, goal_cell=None, cell_type=None, one_tile_range=True, include_diagonals=True): # one tile range means we are going to check for adiencent impossible to reach points
     """
+    BFS pathfinding to find shortest path to goal or nearest cell of type
+
     collision_grid: Used for obstacle avoidance (based on moving troop's type)
     target_grid: Used for finding the target (based on target's type)
-    
-
-    goal_cell = the specific (row, col) of the cell we want to find 
+    goal_cell = the specific (row, col) of the cell we want to find
     cell_type = find closest cell of this type and the path to it
+
+    - Time: Worst case = Average case = O(V + E) where V is vertices h*w grid cells and E is edges up to 8*V for 8 directional
+    - Space: O(V) for visited set and queue may visit all cells in worst case
+    
+    This implementation is better than a DFS because it guarantees the shortest path
     """
     if cell_type and goal_cell: # xor opearor 
         raise ValueError("Either cell_type or goal_cell need to have a value, not both")

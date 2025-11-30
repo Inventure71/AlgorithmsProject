@@ -17,6 +17,12 @@ class Button:
         screen.blit(text_surface, (self.x + self.width/2 - text_surface.get_width()/2, self.y + self.height/2 - text_surface.get_height()/2))
 
     def is_clicked(self, mouse_pos):
+        """
+        Checks if mouse position is inside button and triggers callback
+        
+        - Time: O(1) for bounds check plus O(callback) for callback execution
+        - Space: O(1) no allocations
+        """
         if (self.x < mouse_pos[0] < self.x + self.width and self.y < mouse_pos[1] < self.y + self.height):
             self.callback()
             return True

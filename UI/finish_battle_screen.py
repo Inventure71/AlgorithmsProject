@@ -2,6 +2,9 @@ import pygame
 from UI.components.unit_components.button import Button
 
 class FinishBattleScreen:
+    """
+    End-of-game screen showing winner, crowns, and action buttons
+    """
     def __init__(self, arena, asset_manager, screen):
         self.screen = screen
         self.arena = arena
@@ -18,6 +21,12 @@ class FinishBattleScreen:
     
     """HELPER FUNCTIONS"""
     def initiate_screen(self):
+        """
+        Determines winner and creates UI buttons.
+        
+        - Time: O(1) checks tower counts and creates buttons
+        - Space: O(1) creates 2 buttons
+        """
         if 0 not in self.arena.towers_P1:
             self.winner_team = 2
             self.number_of_crowns = 3
@@ -69,6 +78,12 @@ class FinishBattleScreen:
 
     """LOOP"""
     def draw(self):
+        """
+        Draws the finish screen with winner info, crowns, and buttons
+
+        - Time: Worst case O(crowns + buttons), Average case O(crowns + buttons) equals O(1) since both are bounded (max 3 crowns, 2 buttons)
+        - Space: O(1) uses cached surfaces
+        """
         # get size of pygame display
         display_width, display_height = pygame.display.get_surface().get_size()
         winner_screen = self.asset_manager.get_winner_screen(display_width, display_height)
@@ -135,6 +150,12 @@ class FinishBattleScreen:
             button.draw(self.screen)
        
     def tick(self):
+        """
+        Processes pygame events for button clicks
+
+        - Time: Worst case O(e * b), Average case O(e * b) where e is events and b is buttons checks each button per click
+        - Space: O(1) no allocations
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()

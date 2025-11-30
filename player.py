@@ -2,6 +2,9 @@ from arena import arena
 from core.linear_search import linear_search
 
 class Player:
+    """
+    Represents a player with deck, hand, and elixir management
+    """
     def __init__(self, name, deck, team, arena, max_elixir=10.0):
         self.name = name
         self.deck = deck
@@ -20,12 +23,24 @@ class Player:
         self.elixir_per_tick = 0.006 # every tick, with a bit of eccess (0,008) but it is fine in this case
     
     def increase_elixir(self):
+        """
+        Increases elixir by tick rate with multiplier
+        
+        - Time: O(1) simple arithmetic
+        - Space: O(1) no allocations
+        """
         if self.current_elixir + (self.elixir_per_tick* self.arena.elixir_multiplier) <= self.max_elixir: # parenthesis not needed but better to read
             self.current_elixir += self.elixir_per_tick * self.arena.elixir_multiplier
         else:
             self.current_elixir = self.max_elixir
 
     def place_troop(self, location, card):
+        """
+        Places troops from a card at specified location
+
+        - Time: Worst case = Average case = O(c * tw * th + h) where c is troop count, tw/th are troop dimensions, h is hand size for linear search
+        - Space: O(c) for troops list
+        """
         #troop = card.create_troop(self.team)
         troops = card.create_troops(self.team)
         cost = card.cost
@@ -61,12 +76,24 @@ class Player:
         return True
 
     def draw_card(self):
+        """
+        Draws a card from deck to hand if not full
+
+        - Time: Worst case = Average case = O(1) queue dequeue and list append are O(1)
+        - Space: O(1) adds one card reference
+        """
         if len(self.hand) < self.max_hand_size:
             self.hand.append(self.deck.get_card())
             return True
         return False
 
     def setup_hand(self):
+        """
+        Fills hand to max capacity at game start
+
+        - Time: Worst case = Average case = O(h) where h is max_hand_size (4) draws h cards
+        - Space: O(h) for hand list
+        """
         while len(self.hand) < self.max_hand_size:
             self.draw_card()
         return True
