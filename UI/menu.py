@@ -43,7 +43,6 @@ def run_deck_builder(screen, asset_manager):
             average_elixir_cost = sum(card.cost for card in selected) / len(selected)
 
     def add_card_to_deck(card):
-        # TODO: should we use my implementation of linked list here?
         """
         Adds a card to the selected deck and updates average elixir cost
 
