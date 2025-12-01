@@ -13,11 +13,11 @@ from assets.asset_manager import AssetManager
 import pygame
 from troops.bot import GreedyBot
 
-"""
-TODO: review comments in UI 
 
-TODO: implement wizard
-TODO: implement baby dragon
+"""
+TODO: review comments in UI
+
+TODO: implement princess on tower (just add the princess with photoshop) and do an attack animation (would be so much better)
 
 TODO: check if we can implement a graph for the location of the troops to see the distances or even a heap
 

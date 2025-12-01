@@ -1,7 +1,7 @@
 class GreedyBot:
     """
     Greedy bot that makes locally optimal choices for card and position selection
-    Uses heuristic scoring to evaluate threats and find counters
+    Uses heuristic scoring to evaluate arena threats and pick counters or offensive pushes
     """
     
     def __init__(self, player, arena):
@@ -10,16 +10,17 @@ class GreedyBot:
         self.cooldown = 0
         self.min_elixir = 4
         self.counters = {
-            "air": ["archer", "musketeer", "dart goblin", "bats", "spear goblin"],
+            "air": ["archer", "musketeer", "dart goblin", "bats", "spear goblin", "wizard", "baby dragon"],
             "tank": ["mini pekka", "pekka", "elite barbs", "barbarian"],
-            "swarm": ["archer", "musketeer", "dart goblin"],
+            "swarm": ["archer", "musketeer", "dart goblin", "wizard", "baby dragon"],
             "building_targeter": ["goblins", "skeletons", "knight", "barbarian"],
         }
     
     def think(self):
         """
-        Main decision: returns (card, position) or (None, None)
-        Greedy approach: react to threats first, otherwise play offensively
+        Main decision loop: scans threats, picks a card, and finds a placement position
+        - Time: O(N + H + R*C) where N=troops, H=hand, R,C=arena dimensions
+        - Space: O(1)
         """
         if self.cooldown > 0:
             self.cooldown -= 1
@@ -44,7 +45,11 @@ class GreedyBot:
         return None, None
     
     def _get_positions(self):
-        """Returns strategic positions based on team side"""
+        """
+        Returns list of 8 predefined strategic positions based on team side (top/bottom)
+        - Time: O(1)
+        - Space: O(1)
+        """
         h = self.arena.height
         w = self.arena.width
         mid_h = h // 2
@@ -64,7 +69,11 @@ class GreedyBot:
             ]
     
     def _score_position(self, pos, card, threat, defensive):
-        """Scores a position using weighted heuristics, higher is better"""
+        """
+        Computes heuristic score using distance to towers/threats, lane balance, and safety rules
+        - Time: O(T) where T=towers (max 3, effectively O(1))
+        - Space: O(1)
+        """
         row, col = pos
         is_flying = getattr(card, 'troop_can_fly', False) if card else False
         
@@ -113,7 +122,11 @@ class GreedyBot:
         return score
     
     def _best_position(self, card, threat, defensive):
-        """Finds highest scoring position using greedy selection"""
+        """
+        Finds highest scoring position among strategic spots, with fallbacks near threat or any cell
+        - Time: O(P + R*C) worst case where P=8, R=rows, C=cols
+        - Space: O(1)
+        """
         best_pos = None
         best_score = float('-inf')
         
@@ -139,7 +152,11 @@ class GreedyBot:
         return self._find_any_valid_position()
     
     def _find_any_valid_position(self):
-        """Finds any valid placement position as fallback"""
+        """
+        Scans own half of the arena grid row-by-row to find the first valid placement cell
+        - Time: O(R * C) where R=rows/2, C=columns
+        - Space: O(1)
+        """
         mid_h = self.arena.height // 2
         
         if self.player.team == 2:
@@ -154,7 +171,11 @@ class GreedyBot:
         return None
     
     def _dist_to_tower(self, pos, own=True):
-        """Computes Manhattan distance to nearest tower"""
+        """
+        Computes Manhattan distance from a position to the nearest alive own/enemy tower
+        - Time: O(T) where T=number of towers (max 3, effectively O(1))
+        - Space: O(1)
+        """
         if isinstance(pos, tuple):
             row, col = pos
         elif hasattr(pos, 'location') and pos.location:
@@ -182,7 +203,11 @@ class GreedyBot:
         return min_dist if min_dist != float('inf') else 1
     
     def _lane_troops(self, col):
-        """Counts friendly troops in the same lane"""
+        """
+        Counts friendly alive troops in the same lane (left or right half of the arena)
+        - Time: O(N) where N=unique_troops in arena
+        - Space: O(1)
+        """
         mid_w = self.arena.width // 2
         is_left_lane = col < mid_w
         count = 0
@@ -198,7 +223,11 @@ class GreedyBot:
         return count
     
     def _find_threat(self):
-        """Finds highest threat: damage / distance to our tower"""
+        """
+        Scans enemy troops and returns the one with highest (damage / distance_to_own_tower)
+        - Time: O(N * T) where N=troops, T=towers (effectively O(N))
+        - Space: O(1)
+        """
         best_threat = None
         best_score = 0
         
@@ -220,7 +249,11 @@ class GreedyBot:
         return best_threat
     
     def _categorize_threat(self, threat):
-        """Categorizes threat for counter selection"""
+        """
+        Classifies a threat as "air", "tank", "building_targeter", or "swarm" for counter lookup
+        - Time: O(1)
+        - Space: O(1)
+        """
         if threat.troop_can_fly:
             return "air"
         if threat.health > 1500:
@@ -230,7 +263,11 @@ class GreedyBot:
         return "swarm"
     
     def _find_counter(self, threat):
-        """Finds best counter card using greedy matching"""
+        """
+        Filters affordable hand cards and picks a counter based on threat category (or cheapest card)
+        - Time: O(H * K) where H=hand size, K=counter list size (small constants)
+        - Space: O(H) for the affordable list
+        """
         affordable = [c for c in self.player.hand if c.cost <= self.player.current_elixir]
         if not affordable:
             return None
@@ -246,7 +283,11 @@ class GreedyBot:
         return min(affordable, key=lambda c: c.cost)
     
     def _find_offensive_card(self):
-        """Finds best offensive card: building targeters or highest HP"""
+        """
+        Selects offensive card: prefer building targeters, else max (troop_health * troop_count)
+        - Time: O(H) where H=hand size
+        - Space: O(H) for the affordable list
+        """
         affordable = [c for c in self.player.hand if c.cost <= self.player.current_elixir]
         if not affordable:
             return None

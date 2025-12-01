@@ -177,7 +177,7 @@ class Arena:
         """
         if not is_cell_in_bounds((row, col), self.grid):
             return False
-        if not is_walkable(row, col, self.grid, is_flying=is_flying):
+        if not is_walkable(row, col, self.grid, is_flying=is_flying): # air troops shouldn't be able to be placed on water cells so we pass is_flying=False in the calling method, they will be able to move on it but shouldn't be placed there
             return False
 
         if moving_troop:

@@ -281,7 +281,7 @@ stats_wizard = {
     "troop_attack_speed": 84, # 1.4 sec hit speed
     "troop_attack_range": 5.5,
     "troop_attack_aggro_range": 5.5,
-    "troop_attack_tile_radius": 1.5, # Area damage
+    "troop_attack_tile_radius": 1, # Area damage
     "troop_type": "troop",
     "troop_favorite_target": "any",
     "troop_can_target_air": True,
@@ -301,7 +301,7 @@ stats_baby_dragon = {
     "troop_attack_speed": 90, # 1.5 sec hit speed
     "troop_attack_range": 3.5,
     "troop_attack_aggro_range": 5,
-    "troop_attack_tile_radius": 1.0,
+    "troop_attack_tile_radius": 1,
     "troop_type": "troop",
     "troop_favorite_target": "any",
     "troop_can_target_air": True,

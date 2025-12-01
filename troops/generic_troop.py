@@ -359,13 +359,13 @@ class Troop:
                             loc_to_check = (loc[0]+i_row, loc[1]+i_col)
                             if self.troop_can_target_air:
                                 if loc_to_check in self.arena.occupancy_grid_flying:
-                                    if self.arena.occupancy_grid_flying[loc_to_check] != self:
+                                    if self.arena.occupancy_grid_flying[loc_to_check] != self and self.team != self.arena.occupancy_grid_flying[loc_to_check].team:
                                         self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
                                         if self.attack_tile_radius == 0:
                                             continue # we don't want to do damage in both ground and air cells if the radius is 0
 
                             if loc_to_check in self.arena.occupancy_grid:
-                                if self.arena.occupancy_grid[loc_to_check] != self:
+                                if self.arena.occupancy_grid[loc_to_check] != self and self.team != self.arena.occupancy_grid[loc_to_check].team:
                                     self.arena.occupancy_grid[loc_to_check].take_damage(self.damage, source_troop=self)
 
                     #self.is_targetting_something.take_damage(self.damage, source_troop=self) old system

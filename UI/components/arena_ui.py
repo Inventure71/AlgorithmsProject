@@ -68,13 +68,10 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
     
     # only draw placable cells overlay if needed (this changes dynamically)
     if DRAW_PLACABLE_CELLS or selected_card is not None:
-        if selected_card:
-            troop_can_fly = selected_card.troop_can_fly
-        else:
-            troop_can_fly = False
         for y, row in enumerate(arena.grid):
             for x, value in enumerate(row):
-                if arena.is_placable_cell(y, x, team=team, is_flying=troop_can_fly):
+                # we draw as red the cells where we CANNOT place a troop so we use not is_placable_cell
+                if not arena.is_placable_cell(y, x, team=team, is_flying=False):
                     x_pos = int(x * tile_size)
                     y_pos = int(y * tile_size)
                     width = int((x + 1) * tile_size) - x_pos
