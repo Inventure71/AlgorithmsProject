@@ -155,7 +155,11 @@ def draw_tower(troop, screen, tile_size):
     tower_type = troop.tower_number
     
     # Get tower assets
-    tower_assets = troop.asset_manager.get_tower_assets(tower_type, troop.team, troop.is_alive)
+    if troop.sprite_number == 2 and troop.in_process_attack is not None:
+        is_attacking = True
+    else:
+        is_attacking = False
+    tower_assets = troop.asset_manager.get_tower_assets(tower_type, troop.team, troop.is_alive, is_attacking)
     
     # calculate tower's grid center position (in pixels)
     # troop.location is (row, col) - top-left corner
@@ -167,24 +171,8 @@ def draw_tower(troop, screen, tile_size):
     # calculate center of tower's grid area
     tower_center_x = tower_top_left_x + tower_width // 2
     tower_center_y = tower_top_left_y + tower_height // 2
-    
-    if not troop.is_alive and tower_assets['destroyed']:
-        # draw destroyed tower sprite (scaled and centered)
-        scaled_destroyed = troop.asset_manager.get_scaled_tower_sprite(
-            tower_assets['destroyed'], 
-            tower_width, 
-            tower_height,
-            tower_type,
-            'destroyed'
-        )
-        scaled_width, scaled_height = scaled_destroyed.get_size()
-        
-        # Center the sprite on the tower's grid center
-        sprite_x = tower_center_x - scaled_width // 2
-        sprite_y = tower_center_y - scaled_height // 2
-        screen.blit(scaled_destroyed, (sprite_x, sprite_y))
-    
-    elif troop.is_alive and tower_assets['building']:
+
+    if troop.is_alive and tower_assets['building']:
         # draw building (scaled and centered)
         scaled_building = troop.asset_manager.get_scaled_tower_sprite(
             tower_assets['building'], 
@@ -220,7 +208,7 @@ def draw_tower(troop, screen, tile_size):
             # center character horizontally on tower center, position near top
             char_x = tower_center_x - char_scaled_width // 2
             # position character at top of tower (10% from top of tower grid)
-            char_y = tower_top_left_y + int(tower_height * 0.1) - char_scaled_height // 2
+            char_y = tower_top_left_y + int(tower_height * 0.2) - char_scaled_height // 2
             screen.blit(scaled_character, (char_x, char_y))
     else:
         # fallback to colored rectangle if assets not loaded

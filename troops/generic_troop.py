@@ -267,11 +267,12 @@ class Troop:
         if not self.is_targetting_something:
             # we first check if something can be targetted
             # let's see if we can attack something near us
+            self.in_process_attack = None # remember to reset the attack state
             path = self.find_closest_target(got_blocked=got_blocked) # this will return the path to the option we are going for 
 
         if self.is_targetting_something: # if we are now targetting something we do this instead of moving torward the towers
             if not self.is_targetting_something.is_alive:
-                self.is_targetting_something = None
+                self.is_targetting_something = None # we reset the target because the target is dead
                 self.reset_path()
                 path = self.find_closest_target()
         
@@ -282,11 +283,15 @@ class Troop:
                 if not is_in_attack_range(self, self.is_targetting_something):
                     self.reset_path()
                     target_grid = self.is_targetting_something.get_occupancy_grid()
+                    self.in_process_attack = None
 
-                    #print(f"{self.name} not in range, finding pabth to troop")
-                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
-                    #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
-                    self.current_path = path
+                    if self.raw_movement_speed > 0:
+                        #print(f"{self.name} not in range, finding pabth to troop")
+                        path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
+                        #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
+                        self.current_path = path
+                    else:
+                        self.is_targetting_something = None # we reset the target because the target is far away and we can't move
                 else:
                     #if self.movement_speed != 0:
                         #print(f"{self.name} already in range, no need to move, Attacking")
