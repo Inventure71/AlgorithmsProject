@@ -149,8 +149,8 @@ class UIAssetManager(CacheManager):
         """
         Load crown image for a team
         
-        - Time: O(1) cached, O(size²) on first load and scale
-        - Space: O(size²) per scaled crown
+        - Time: O(1) cached, O(size^2) on first load and scale
+        - Space: O(size^2) per scaled crown
         """
         cache_key = (crown_team, size, size)
 

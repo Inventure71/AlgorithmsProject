@@ -63,7 +63,7 @@ class SpriteManager(CacheManager):
         Standardize a sprite to STANDARD_SPRITE_SIZE while preserving aspect ratio.
         
         - Time: O(w*h) for scaling operation
-        - Space: O(STANDARD_SIZE²) for new surface
+        - Space: O(STANDARD_SIZE^2) for new surface
         """
         cache_key = (troop_name, team, sprite_number)
         

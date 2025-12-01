@@ -226,7 +226,12 @@ class Troop:
     """SPRITE LOADING"""
     def swap_sprite(self, moving=True, reset_attack=False):
         """
-        TODO: add complexity analysis
+        Cycles through sprite animations (moving/attack states) and loads appropriate sprite
+
+        - Time: Worst case = Average case = O(1) cached, O(w*h) on first load where w*h=256^2=65k pixels for file I/O/standardization
+        - Space: O(w*h) per sprite surface in cache (65k pixels typical)
+
+        Note: By default the frame count check is always true (integer % 1 == 0), so runs every call
         """
         if self.arena.frame_count % 1 == 0:
             if moving:
@@ -253,7 +258,7 @@ class Troop:
         
         BFS handles dynamic obstacles and find nearest
         """
-        if not self.is_active:
+        if not self.is_active or not self.is_alive:
             return
         
         path = None
