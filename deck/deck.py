@@ -22,18 +22,15 @@ class Deck:
         for card in cards:
             self.cards.enqueue(card)
 
-    def shuffle_cards_custom(self):
-        # TODO: implement a function to shuffle the cards 
-        pass
-
     def shuffle_cards(self):
         """
         Shuffles deck using Fisher-Yates shuffle (via random.shuffle)
 
         - Time: Worst case = Average case = O(n) for shuffle plus O(n) for queue rebuild equals O(n)
         - Space: O(n) for new queue
+
+        We used an already existing library because we felt like the manual implementation wouldn't have added much value
         """
-        # TODO: maybe implement this in core 
         random.shuffle(self.full_list)
         self.list_to_queue(self.full_list)
 

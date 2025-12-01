@@ -36,10 +36,7 @@ class Player:
 
     def place_troop(self, location, card):
         """
-        Places troops from a card at specified location
-
-        - Time: Worst case = Average case = O(c * tw * th + h) where c is troop count, tw/th are troop dimensions, h is hand size for linear search
-        - Space: O(c) for troops list
+        TODO: add complexity analysis
         """
         #troop = card.create_troop(self.team)
         troops = card.create_troops(self.team)
@@ -69,23 +66,25 @@ class Player:
         # use my custom linear search to find the card index
         index = linear_search(self.hand, card)
         if index != -1:
-            # remove the card by index
-            self.hand.pop(index)
-        self.deck.add_card(card)
-        self.draw_card()
+            # we don't need to remove the card by index, we need to swap it with the drawn card
+            self.draw_card(swap=index) # we subsitute in place
+    
+        self.deck.add_card(card) 
+        # we don't even need to call the draw card function because we already drew a card
         return True
 
-    def draw_card(self):
+    def draw_card(self, swap=None):
         """
-        Draws a card from deck to hand if not full
-
-        - Time: Worst case = Average case = O(1) queue dequeue and list append are O(1)
-        - Space: O(1) adds one card reference
+        TODO: add complexity analysis
         """
-        if len(self.hand) < self.max_hand_size:
-            self.hand.append(self.deck.get_card())
+        if swap is not None:
+            self.hand[swap] = self.deck.get_card()
             return True
-        return False
+        else:
+            if len(self.hand) < self.max_hand_size:
+                self.hand.append(self.deck.get_card())
+                return True
+            return False
 
     def setup_hand(self):
         """

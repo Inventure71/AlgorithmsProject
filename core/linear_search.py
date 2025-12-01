@@ -1,5 +1,6 @@
 
 
+
 def linear_search(list, target):
     """
     Performs a linear scan over a list to find the target element

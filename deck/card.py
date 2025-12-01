@@ -11,6 +11,9 @@ class Card:
     troop_class,
     troop_name,
     asset_manager=None):
+        """
+        TODO: add complexity analysis
+        """
         self.name = name
         self.troop_class = troop_class
         self.color = color

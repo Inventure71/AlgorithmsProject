@@ -33,12 +33,12 @@ def reconstruct_path(last_node: Node):
 
 def append(head, value):
     """
-    Appends a value to the end of a singly linked list.
+    Appends a value to the end of a singly linked list
 
     - Time: Worst case = Average case = O(n) where n is the list length must traverse to find the tail
     - Space: O(1) only creates one new node
 
-    TODO: explain why we use this and not alternative: Maintaining a tail pointer would make this O(1); our simpler approach trades speed for memory
+    NOTE: this function is implemented but not used because we use insert below that is O(1) in bfs
     """
     new_node = Node(value)
     if not head:
