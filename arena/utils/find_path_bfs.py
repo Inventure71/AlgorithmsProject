@@ -1,8 +1,8 @@
-from collections import deque
 from arena.utils.random_utils import is_walkable
 from arena.utils.random_utils import is_cell_in_bounds
-from core.linked_list import reconstruct_path
+from core.linked_list import reconstruct_path, insert
 from core.node import Node
+from core.queue import Queue # We are using the implementation from core, not deque library
 
 # we modified this function to take into account the width of the troop so that we can check if the path is valid for the troop if it isn't 1 sized
 def get_valid_neighbors(cell: (int, int), grid, collision_grid, self_troop, include_non_walkable=False, include_diagonals=False):
@@ -72,18 +72,18 @@ def find_path_bfs(start, grid, collision_grid, target_grid, self_troop, goal_cel
 
     # queue holds tuples: (current_tile, path_list)
     # we start at 'start', and the path contains just ['start']
-
-    start_node = Node(start, None)
-    queue = deque([start_node])
+    queue = Queue()
+    start_node = Node(start, None) # this one is a Node used for the linked list not for the queue itself, it is added to the queue as a if it was a value
+    queue.enqueue(start_node)
 
     # we keep track of seen tiles to not incur in loops
     visited = set()
     visited.add(start)
 
     # while our list isn't empty
-    while queue:
+    while not queue.is_empty():
         # get the first node from queue
-        current_node = queue.popleft()
+        current_node = queue.dequeue()
         curr_row, curr_col = current_node.value
 
         if cell_type and grid[curr_row][curr_col] == cell_type:
@@ -118,7 +118,8 @@ def find_path_bfs(start, grid, collision_grid, target_grid, self_troop, goal_cel
                 # so that we don't visit it in the future
                 if is_valid:
                     visited.add(neighbor)
-                    queue.append(Node(neighbor, current_node))
-
+                    new_last_node = insert(current_node, neighbor) # use this instead of line below
+                    queue.enqueue(new_last_node)
+                
     return None # meaning couldn't find any path
             

@@ -5,6 +5,10 @@ class Queue:
         self.head = None
         self.tail = None
 
+    def is_empty(self):
+        """Returns True if the queue is empty, O(1) time"""
+        return self.head is None
+
     def enqueue(self, value):
         """
         Enqueues a value at the back of the queue

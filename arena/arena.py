@@ -403,8 +403,8 @@ class Arena:
             self.game_finished = True
             return False
         if 0 not in self.towers_P2:
-            self.game_finished = True
-            return False
+            self.game_finished = True # meaning stop game
+            return False # the return is not used but it is for visual purposes
 
         return True
 

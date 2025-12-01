@@ -22,6 +22,10 @@ class Deck:
         for card in cards:
             self.cards.enqueue(card)
 
+    def shuffle_cards_custom(self):
+        # TODO: implement a function to shuffle the cards 
+        pass
+
     def shuffle_cards(self):
         """
         Shuffles deck using Fisher-Yates shuffle (via random.shuffle)

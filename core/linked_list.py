@@ -18,15 +18,15 @@ def reconstruct_path(last_node: Node):
     """
     stack = Stack()
     path = []
+    
     current = last_node
-
     while current is not None:
         stack.push(current.value)
         current = current.next # walk back through parents and recreate a normal list from linked list
-
-    current = stack.pop()
+    
+    current = stack.pop() # if the path is empty, this returns none already so it is handled
     while current is not None:
-        path.append(current.value)
+        path.append(current)
         current = stack.pop()
 
     return path

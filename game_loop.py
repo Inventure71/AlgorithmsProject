@@ -87,6 +87,8 @@ def game_tick():
 
     - Time: Worst case = Average case = O(n * (m + V + E)) where n is troops, m is other troops for targeting, and V + E is BFS pathfinding
     - Space: O(V) per troop for path storage
+
+    TODO: improve this complexity analysis, The main game tick function in game_loop.py has analysis but doesn't aggregate the total complexity of running all troops
     """
     # only every N frames
     if arena.frame_count % TICK_RATE == 0:

@@ -8,6 +8,10 @@ class Stack:
     def __init__(self):
         self.head = None
 
+    def is_empty(self):
+        """Returns True if the stack is empty, O(1) time"""
+        return self.head is None
+
     def push(self, value):
         """
         Pushes a value onto the top of the stack
@@ -32,10 +36,8 @@ class Stack:
         if not self.head:
             return None
         
-        temp = self.head
+        temp = self.head.value
 
         self.head = self.head.next
 
         return temp
-        
-        
