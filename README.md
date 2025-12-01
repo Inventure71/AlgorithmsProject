@@ -25,3 +25,6 @@ python game_loop.py
 1. **Deck Builder**: Select 8 cards for your deck from the menu
 2. **Place Troops**: Click a card in your hand, then click in the non red area of the arena to deploy
 3. **Win Condition**: Destroy more enemy towers than you lose before time expires
+
+## Basic gameplay video
+[![Gameplay Video](https://img.youtube.com/vi/35BMyos7Oa8/maxresdefault.jpg)](https://youtu.be/35BMyos7Oa8)
