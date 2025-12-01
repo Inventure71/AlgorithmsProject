@@ -1,8 +1,7 @@
 from math import inf
-import random
 from constants import *
-from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 from arena.utils.find_path_bfs import find_path_bfs
+from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 
 class Troop:
     """
@@ -62,6 +61,7 @@ class Troop:
 
         """TOWER"""
         self.is_tower = self.name.startswith("Tower") # check if this is a tower (towers need grid cleanup)
+        
         self.tower_number = int(self.name.split(" ")[1]) if self.is_tower else None
 
         """EXP"""
@@ -233,7 +233,7 @@ class Troop:
 
         Note: By default the frame count check is always true (integer % 1 == 0), so runs every call
         """
-        if self.arena.frame_count % 1 == 0:
+        if self.arena.frame_count % ANIMATION_RATE == 0:
             if moving:
                 if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
                     self.sprite_number = 0 # moving sprite 1
@@ -364,14 +364,17 @@ class Troop:
                     # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
                     self.swap_sprite(moving=False, reset_attack=False)
                     loc = self.is_targetting_something.location
+                    is_the_target_air = self.is_targetting_something.troop_can_fly
                     for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                         for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                             # we need to check both occupancy grids if the troop is able to attack air, otherwise only the ground one
                             loc_to_check = (loc[0]+i_row, loc[1]+i_col)
-                            if self.troop_can_target_air:
+
+                            if self.troop_can_target_air and (is_the_target_air or self.attack_tile_radius>0):
                                 if loc_to_check in self.arena.occupancy_grid_flying:
                                     if self.arena.occupancy_grid_flying[loc_to_check] != self and self.team != self.arena.occupancy_grid_flying[loc_to_check].team:
                                         self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
+
                                         if self.attack_tile_radius == 0:
                                             continue # we don't want to do damage in both ground and air cells if the radius is 0
 

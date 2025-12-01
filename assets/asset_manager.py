@@ -1,11 +1,12 @@
 import os
-from typing import Dict, Optional, Tuple, List
-
 import pygame
-from assets.components.sprite_manager import SpriteManager
-from assets.components.tower_asset_manager import TowerAssetManager
-from assets.components.ui_asset_manager import UIAssetManager
+from typing import Dict, Optional, Tuple, List
 from assets.components.text_renderer import TextRenderer
+from assets.components.sprite_manager import SpriteManager
+from assets.components.ui_asset_manager import UIAssetManager
+from assets.components.tower_asset_manager import TowerAssetManager
+
+
 
 class AssetManager:
     """

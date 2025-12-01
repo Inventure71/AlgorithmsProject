@@ -1,6 +1,7 @@
 
 # must be bigger equal than 1
 TICK_RATE = 1 # N frames per tick (meaning if N = 5, we will tick every 5 frames)
+ANIMATION_RATE = 1
 
 EMPTY=0; GRASS=1; WATER=2; BRIDGE=3; TOWER_P1=5; TOWER_P2=8 
 walkable_cells = set([GRASS, BRIDGE])

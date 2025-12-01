@@ -1,4 +1,3 @@
-from arena import arena
 from core.linear_search import linear_search
 
 class Player:

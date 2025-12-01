@@ -122,7 +122,6 @@ class Card:
         positions = []
         troop_index = 0
 
-        positions = []
         for row in range(rows):
             for col in range(cols):
                 if troop_index >= troop_count:

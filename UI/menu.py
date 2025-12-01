@@ -1,12 +1,12 @@
 import pygame
+import random
 from deck.card import Card
 from deck.deck import Deck
 from deck.stats import stats
 from troops.generic_troop import Troop
-from UI.components.unit_components.button import Button
-from UI.components.hand_ui import draw_elixir_icon
 from core.sorting import merge_sort_by_key 
-import random
+from UI.components.hand_ui import draw_elixir_icon
+from UI.components.unit_components.button import Button
 
 """
 NOTE: The 'selected' list uses a Python list instead of a dictionary because:

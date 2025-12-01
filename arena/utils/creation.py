@@ -184,7 +184,7 @@ def mirror_arena(height, width, arena, asset_manager, team=2):
                     arena.grid[cell[0]][cell[1]] = TOWER_P2 + tower_type
                     
                     # Store only border cells in occupancy_grid
-                    if (row_offset == 0 or row_offset == tower.height - 1 or col_offset == 0 or col_offset == tower.width - 1) and (col_offset % 2 == 0 or row_offset % 2 == 0):
+                    if (row_offset == 0 or row_offset == tower.height - 1 or col_offset == 0 or col_offset == tower.width - 1) and (col_offset % GAP_BETWEEN_TOWER_CELLS == 0 or row_offset % GAP_BETWEEN_TOWER_CELLS == 0):
                         arena.occupancy_grid[cell] = mirrored_tower
         
         arena.unique_troops.add(mirrored_tower)
