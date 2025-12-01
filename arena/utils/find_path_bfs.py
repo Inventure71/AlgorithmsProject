@@ -105,8 +105,9 @@ def find_path_bfs(start, grid, collision_grid, target_grid, self_troop, goal_cel
             if not (neighbor in visited):
                 
                 if one_tile_range:
-                    if (cell_type and grid[neighbor[0]][neighbor[1]] == cell_type):
+                    if (cell_type and grid[neighbor[0]][neighbor[1]] == cell_type): # sometimes the cell type will be of a class so it will not be in this grid but in the others, for comodity we check if it is in the grid and then if it is the same type eitherway enabling a bit more flexibility for possible changes in the future
                         return reconstruct_path(Node(neighbor, current_node))
+
                     if goal_cell and (neighbor[0], neighbor[1]) == goal_cell:
                         return reconstruct_path(Node(neighbor, current_node))
 
