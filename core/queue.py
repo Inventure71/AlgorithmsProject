@@ -1,4 +1,4 @@
-from core.linked_list import Node
+from core.node import Node
 
 class Queue:
     def __init__(self):

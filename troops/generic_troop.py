@@ -1,8 +1,7 @@
 from math import inf
-import random
 from constants import *
-from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 from arena.utils.find_path_bfs import find_path_bfs
+from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 
 class Troop:
     """
@@ -23,7 +22,7 @@ class Troop:
         height,
         color,
         team,
-        location = None,
+        location = (-1,-1), # this way the location will never be None
         arena = None,
         asset_manager = None,
         scale_multiplier = 1,
@@ -62,6 +61,7 @@ class Troop:
 
         """TOWER"""
         self.is_tower = self.name.startswith("Tower") # check if this is a tower (towers need grid cleanup)
+        
         self.tower_number = int(self.name.split(" ")[1]) if self.is_tower else None
 
         """EXP"""
@@ -150,7 +150,7 @@ class Troop:
             path = find_path_bfs(self.location, self.arena.grid, {}, {}, self, cell_type=tower_to_find)
 
         
-        if self.attack_aggro_range >= minimum_distance_to_troop >= 0:
+        if self.attack_aggro_range >= minimum_distance_to_troop >= 0 and closest_troop is not None:
             # select troop (this also includes the tower)
             self.is_targetting_something = closest_troop
             #print("targetting troop", closest_troop.name)
@@ -233,9 +233,9 @@ class Troop:
 
         Note: By default the frame count check is always true (integer % 1 == 0), so runs every call
         """
-        if self.arena.frame_count % 1 == 0:
+        if self.arena.frame_count % ANIMATION_RATE == 0:
             if moving:
-                if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
+                if self.sprite_number >= 1: # we have 3 sprites so we cycle through them but 0 and 1 are movement and 2 is attack  
                     self.sprite_number = 0 # moving sprite 1
                 else:
                     self.sprite_number = 1 # moving sprite 2
@@ -267,11 +267,12 @@ class Troop:
         if not self.is_targetting_something:
             # we first check if something can be targetted
             # let's see if we can attack something near us
+            self.in_process_attack = None # remember to reset the attack state
             path = self.find_closest_target(got_blocked=got_blocked) # this will return the path to the option we are going for 
 
         if self.is_targetting_something: # if we are now targetting something we do this instead of moving torward the towers
             if not self.is_targetting_something.is_alive:
-                self.is_targetting_something = None
+                self.is_targetting_something = None # we reset the target because the target is dead
                 self.reset_path()
                 path = self.find_closest_target()
         
@@ -282,11 +283,15 @@ class Troop:
                 if not is_in_attack_range(self, self.is_targetting_something):
                     self.reset_path()
                     target_grid = self.is_targetting_something.get_occupancy_grid()
+                    self.in_process_attack = None
 
-                    #print(f"{self.name} not in range, finding pabth to troop")
-                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
-                    #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
-                    self.current_path = path
+                    if self.raw_movement_speed > 0:
+                        #print(f"{self.name} not in range, finding pabth to troop")
+                        path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
+                        #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
+                        self.current_path = path
+                    else:
+                        self.is_targetting_something = None # we reset the target because the target is far away and we can't move
                 else:
                     #if self.movement_speed != 0:
                         #print(f"{self.name} already in range, no need to move, Attacking")
@@ -323,7 +328,7 @@ class Troop:
                 self.reset_path() # we cleanup because we finished the path
                 return 
             
-            if is_in_attack_range(self, self.is_targetting_something):
+            if self.is_targetting_something is not None and is_in_attack_range(self, self.is_targetting_something):
                 #print(f"{self.name} is in attack range of {self.is_targetting_something.name}, no need to move, attacking")
                 self.attack()
                 return
@@ -353,20 +358,26 @@ class Troop:
         """
         if self.is_alive and self.is_active:
             if self.in_process_attack:
+                if not self.is_targetting_something:
+                    return False # for some reason the troop is not targetting something, we return false
+
                 if (self.arena.frame_count-self.in_process_attack) >= self.attack_speed:
                     # attack_tile_radius
                     # we expand the damage in all directions from the location of this troop
                     # we do the damage based on location and not on troop targetted we use that only for the initial "explosion"
                     self.swap_sprite(moving=False, reset_attack=False)
                     loc = self.is_targetting_something.location
+                    is_the_target_air = self.is_targetting_something.troop_can_fly
                     for i_row in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                         for i_col in range(0-self.attack_tile_radius, self.attack_tile_radius+1):
                             # we need to check both occupancy grids if the troop is able to attack air, otherwise only the ground one
                             loc_to_check = (loc[0]+i_row, loc[1]+i_col)
-                            if self.troop_can_target_air:
+
+                            if self.troop_can_target_air and (is_the_target_air or self.attack_tile_radius>0):
                                 if loc_to_check in self.arena.occupancy_grid_flying:
                                     if self.arena.occupancy_grid_flying[loc_to_check] != self and self.team != self.arena.occupancy_grid_flying[loc_to_check].team:
                                         self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
+
                                         if self.attack_tile_radius == 0:
                                             continue # we don't want to do damage in both ground and air cells if the radius is 0
 
@@ -404,4 +415,4 @@ class Troop:
                 self.arena.remove_unit(self)
         else:
             self.health -= damage
-            print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")
+            #print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")

@@ -1,17 +1,17 @@
-from UI.components.arena_ui import draw_arena, draw_units
-from UI.components.hand_ui import draw_hand, draw_elixir_icon
-from UI.components.debug_ui import draw_attack_ranges
-from UI.finish_battle_screen import FinishBattleScreen
-from UI.menu import run_deck_builder
-from arena.arena import Arena
+import pygame
 from constants import *
+from player import Player
 from deck.card import Card
 from deck.deck import Deck
-from player import Player
+from arena.arena import Arena
+from troops.bot import GreedyBot
+from UI.menu import run_deck_builder
 from troops.generic_troop import Troop
 from assets.asset_manager import AssetManager
-import pygame
-from troops.bot import GreedyBot
+from UI.components.debug_ui import draw_attack_ranges
+from UI.finish_battle_screen import FinishBattleScreen
+from UI.components.arena_ui import draw_arena, draw_units
+from UI.components.hand_ui import draw_elixir_icon, draw_hand
 
 colors = {
     0: (0, 0, 0),  # none
@@ -220,6 +220,8 @@ while looping: # bigger loop for the game loop
         pygame.display.flip()
         clock.tick(TICKS_PER_SECOND+1) # we add 1 to have a bit of a margin, sometimes it goes a bit slow
     
+    print("Match over")
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -231,7 +233,6 @@ while looping: # bigger loop for the game loop
                     for button in finish_battle_screen.buttons:
                         button.is_clicked(mouse_pos)
 
-        print("Match over")
         draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=selected_card, team=1)
         draw_units(arena, screen, tile_size, asset_manager)
 

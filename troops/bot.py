@@ -238,7 +238,7 @@ class GreedyBot:
                 continue
             
             dist = self._dist_to_tower(troop, own=True)
-            if dist <= 0:
+            if dist <= 0 or dist == float('inf'):
                 continue
             
             threat_score = troop.damage / dist

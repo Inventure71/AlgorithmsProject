@@ -1,8 +1,7 @@
-from ast import Raise
-from multiprocessing import Value
-from arena.utils.creation import generate_tower, generate_river, generate_mock_bridges, mirror_arena
-from arena.utils.random_utils import is_cell_in_bounds, is_walkable
 from constants import *
+from typing import Tuple
+from arena.utils.random_utils import is_cell_in_bounds, is_walkable
+from arena.utils.creation import generate_tower, generate_river, generate_mock_bridges, mirror_arena
 
 
 """
@@ -29,7 +28,7 @@ class Arena:
         if MULTIPLIER_GRID_HEIGHT <= 0:
             raise ValueError("MULTIPLIER_GRID_HEIGHT must be greater than 0")
         # enforce height multiple of 16 and at least 32
-        if height % 16 != 0 and height >= 32:
+        if height % 16 != 0 or height < 32:
             # because we can't modify from here the constant MULTIPLIER_GRID_HEIGHT we don't want to continue this loop with this bad values so we raise an error
             raise ValueError("height of arena needs to be a multiple of 16!!! and bigger or equal than 32")
 
@@ -269,7 +268,7 @@ class Arena:
         
         return True
 
-    def spawn_unit(self, troop, cell: (int, int)):
+    def spawn_unit(self, troop, cell: Tuple[int, int]):
         """
         Spawns a troop into the arena and marks all occupied cells
 
@@ -305,7 +304,7 @@ class Arena:
 
         return True
     
-    def move_unit(self, troop, new_cell: (int, int)):
+    def move_unit(self, troop, new_cell: Tuple[int, int]):
         """
         Used to move a troop from old cell in the occupancy_grid.
 

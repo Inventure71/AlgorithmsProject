@@ -1,4 +1,3 @@
-from arena import arena
 from core.linear_search import linear_search
 
 class Player:
@@ -20,7 +19,7 @@ class Player:
         self.max_elixir = max_elixir
 
         # at base rate it's 1 Elixir every 2.8 seconds, which equals to 0.06 every tick
-        self.elixir_per_tick = 0.006 # every tick, with a bit of eccess (0,008) but it is fine in this case
+        self.elixir_per_tick = 0.006 # every tick, with a bit of eccess (0,0008) but it is fine in this case
     
     def increase_elixir(self):
         """

@@ -10,16 +10,12 @@ class TowerAssetManager(CacheManager):
     Uses hash table caching for O(1) lookups
     """
     
-    # scaling multipliers for tower images
-    PRINCESS_TOWER_SCALE = 3.0
-    KING_TOWER_SCALE = 2.5
-    
     def __init__(self, assets_path: str):
         super().__init__()
         self.assets_path = assets_path
         self._scaled_cache: Dict[Tuple[int, int, int, str, float], pygame.Surface] = {}
     
-    def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True) -> Dict[str, Optional[pygame.Surface]]:
+    def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True, is_attacking: bool = False) -> Dict[str, Optional[pygame.Surface]]:
         """
         Load complete tower asset set
 
@@ -27,6 +23,7 @@ class TowerAssetManager(CacheManager):
             tower_type: -1 (left princess), 0 (king), 1 (right princess)
             team: 1 or 2
             is_alive: True for active, False for destroyed
+            is_attacking: True if tower is currently attacking (for animation)
 
         Returns:
             Dict with 'building', 'character', 'destroyed' keys
@@ -34,20 +31,20 @@ class TowerAssetManager(CacheManager):
         - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first load per asset
         - Space: O(assets * w * h) for tower surfaces
         """
-        cache_key = (tower_type, team, is_alive)
+        cache_key = (tower_type, team, is_alive, is_attacking)
         
         if self.has_cached(cache_key):
             return self.get_cached(cache_key)
         
-        assets = self._load_tower_assets(tower_type, team, is_alive)
+        assets = self._load_tower_assets(tower_type, team, is_alive, is_attacking)
         self.set_cached(cache_key, assets)
         return assets
     
     def get_scaled_tower_sprite(self, tower_sprite: pygame.Surface, target_width: int,
                                 target_height: int, tower_type: int, layer: str = "building") -> pygame.Surface:
         """
-        Scale a tower sprite proportionally to fit within target dimensions.
-        Maintains aspect ratio.
+        Scale a tower sprite proportionally to fit within target dimensions
+        Maintains aspect ratio
 
         Args:
             tower_sprite: The original sprite surface
@@ -83,18 +80,18 @@ class TowerAssetManager(CacheManager):
         self._scaled_cache[cache_key] = scaled_sprite
         return scaled_sprite
         
-    def _load_tower_assets(self, tower_type: int, team: int, is_alive: bool) -> Dict[str, Optional[pygame.Surface]]:
+    def _load_tower_assets(self, tower_type: int, team: int, is_alive: bool, is_attacking: bool = False) -> Dict[str, Optional[pygame.Surface]]:
         """
-        Internal method to load tower assets from disk.
+        Internal method to load tower assets from disk
 
         - Time: Worst case = Average case = O(f log f + s * w * h) where:
-            - f is number of files in tower folder (typically 1-2, so effectively O(1))
-            - s is sprites loaded (1-2)
+            - f is number of files in tower folder (typically 1-3, so effectively O(1))
+            - s is sprites loaded (1-3)
             - w/h are sprite dimensions
         - Space: O(s * w * h) for loaded surfaces
 
         NOTE: Sorting is needed because tower files have mixed naming conventions, this can be changed but we wanted to demonstate another system to sort files in a folder
-        With only 1-2 files per folder, O(f log f) almost O(1)
+        With only 1-3 files per folder, O(f log f) almost O(1)
         """
         result = {'building': None, 'character': None, 'destroyed': None}
         
@@ -109,18 +106,27 @@ class TowerAssetManager(CacheManager):
                 sprite_files = merge_sort_by_key(list_of_sprite_files, key=lambda x: x.lower()) # sorted
                 
                 if tower_type == 0 and len(sprite_files) >= 2:
-                    # King tower: building + character
+                    # king tower: building + character
                     result['building'] = self._load_image(os.path.join(tower_path, sprite_files[0]))
                     result['character'] = self._load_image(os.path.join(tower_path, sprite_files[1]))
                 elif len(sprite_files) >= 1:
-                    # Princess tower: building only
+                    # princess tower: building (0.png) + character (1.png idle, 2.png attack)
                     result['building'] = self._load_image(os.path.join(tower_path, sprite_files[0]))
+                    
+                    # load princess character sprite based on attack state
+                    if len(sprite_files) >= 3:
+                        # 1.png = idle, 2.png = attacking
+                        character_index = 2 if is_attacking else 1
+                        result['character'] = self._load_image(os.path.join(tower_path, sprite_files[character_index]))
+                    elif len(sprite_files) >= 2:
+                        # fallback: only idle sprite available
+                        result['character'] = self._load_image(os.path.join(tower_path, sprite_files[1]))
         
         return result
     
     def _load_destroyed_tower(self, tower_type: int) -> Optional[pygame.Surface]:
         """
-        Load destroyed tower sprite (team-agnostic).
+        Load destroyed tower sprite (team-agnostic)
 
         - Time: Worst case = Average case = O(w*h) where w/h are the width and height of the tower sprite
         - Space: O(w*h) for surface

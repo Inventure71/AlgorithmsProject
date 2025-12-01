@@ -1,11 +1,12 @@
 import os
-from typing import Dict, Optional, Tuple, List
-
 import pygame
-from assets.components.sprite_manager import SpriteManager
-from assets.components.tower_asset_manager import TowerAssetManager
-from assets.components.ui_asset_manager import UIAssetManager
+from typing import Dict, Optional, Tuple, List
 from assets.components.text_renderer import TextRenderer
+from assets.components.sprite_manager import SpriteManager
+from assets.components.ui_asset_manager import UIAssetManager
+from assets.components.tower_asset_manager import TowerAssetManager
+
+
 
 class AssetManager:
     """
@@ -30,8 +31,8 @@ class AssetManager:
     def get_scaled_sprite(self, sprite, sprite_number, width: int, height: int):
         return self.sprites.get_scaled_sprite(sprite, sprite_number, width, height)
     
-    def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True):
-        return self.towers.get_tower_assets(tower_type, team, is_alive)
+    def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True, is_attacking: bool = False):
+        return self.towers.get_tower_assets(tower_type, team, is_alive, is_attacking)
     
     def get_scaled_tower_sprite(self, sprite, width: int, height: int, tower_type: int, layer: str = "building"):
         return self.towers.get_scaled_tower_sprite(sprite, width, height, tower_type, layer)

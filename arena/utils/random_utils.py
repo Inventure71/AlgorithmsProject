@@ -1,7 +1,5 @@
-import re
-from tkinter import N
-from constants import *
 import math
+from constants import *
 from deck.stats import *
 
 """
@@ -108,33 +106,38 @@ def extract_tower_stats(tower_type):
     - Time: Worst case = Average case = O(1)
     - Space: O(1)
     """
-    if tower_type == 1 or tower_type == -1:
-        troop_health = stats_tower_small.get("troop_health")
-        troop_damage = stats_tower_small.get("troop_damage")
-        troop_movement_speed = stats_tower_small.get("troop_movement_speed")
-        troop_attack_type = stats_tower_small.get("troop_attack_type")
-        troop_attack_speed = stats_tower_small.get("troop_attack_speed")
-        troop_attack_range = stats_tower_small.get("troop_attack_range")
-        troop_attack_aggro_range = stats_tower_small.get("troop_attack_range")
-        troop_attack_tile_radius = stats_tower_small.get("troop_attack_tile_radius")
-        troop_width = stats_tower_small.get("troop_width")
-        troop_height = stats_tower_small.get("troop_height")
-        troop_type = stats_tower_small.get("troop_type")
-        troop_favorite_target = stats_tower_small.get("troop_favorite_target")
-        troop_can_target_air = stats_tower_small.get("troop_can_target_air")
-        return troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_tile_radius, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air
+    if tower_type in (1, -1): # we check if it is a left or right tower
+        tower_stats = stats_tower_small # we select the small tower stats
     else:
-        troop_health = stats_tower_center.get("troop_health")
-        troop_damage = stats_tower_center.get("troop_damage")
-        troop_movement_speed = stats_tower_center.get("troop_movement_speed")
-        troop_attack_type = stats_tower_center.get("troop_attack_type")
-        troop_attack_speed = stats_tower_center.get("troop_attack_speed")
-        troop_attack_range = stats_tower_center.get("troop_attack_range")
-        troop_attack_aggro_range = stats_tower_center.get("troop_attack_range")
-        troop_attack_tile_radius = stats_tower_center.get("troop_attack_tile_radius")
-        troop_width = stats_tower_center.get("troop_width")
-        troop_height = stats_tower_center.get("troop_height")
-        troop_type = stats_tower_center.get("troop_type")
-        troop_favorite_target = stats_tower_center.get("troop_favorite_target")
-        troop_can_target_air = stats_tower_center.get("troop_can_target_air")
-        return  troop_health, troop_damage, troop_movement_speed, troop_attack_type, troop_attack_speed, troop_attack_range, troop_attack_aggro_range, troop_attack_tile_radius, troop_width, troop_height, troop_type, troop_favorite_target, troop_can_target_air
+        tower_stats = stats_tower_center # we select the center tower stats
+
+    troop_health = tower_stats.get("troop_health")
+    troop_damage = tower_stats.get("troop_damage")
+    troop_movement_speed = tower_stats.get("troop_movement_speed")
+    troop_attack_type = tower_stats.get("troop_attack_type")
+    troop_attack_speed = tower_stats.get("troop_attack_speed")
+    troop_attack_range = tower_stats.get("troop_attack_range")
+    troop_attack_aggro_range = troop_attack_range # this is done on purpose to avoid possible confusion, for towers the aggro range is the same as the attack range
+    troop_attack_tile_radius = tower_stats.get("troop_attack_tile_radius")
+    troop_width = tower_stats.get("troop_width")
+    troop_height = tower_stats.get("troop_height")
+    troop_type = tower_stats.get("troop_type")
+    troop_favorite_target = tower_stats.get("troop_favorite_target")
+    troop_can_target_air = tower_stats.get("troop_can_target_air")
+
+    return (
+        troop_health,
+        troop_damage,
+        troop_movement_speed,
+        troop_attack_type,
+        troop_attack_speed,
+        troop_attack_range,
+        troop_attack_aggro_range,
+        troop_attack_tile_radius,
+        troop_width,
+        troop_height,
+        troop_type,
+        troop_favorite_target,
+        troop_can_target_air,
+    )
+

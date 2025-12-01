@@ -1,8 +1,7 @@
 import os
 import pygame
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Dict
 from assets.cache_manager import CacheManager
-from core.sorting import merge_sort_by_key
 
 class SpriteManager(CacheManager):
     """
