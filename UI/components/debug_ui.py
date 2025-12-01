@@ -2,7 +2,12 @@ import pygame
 
 """DEBUG FUNCTIONS"""
 def draw_attack_ranges(arena, tile_size, screen):
-    """Draw semi-transparent attack range circles for all troops"""
+    """
+    Draw semi-transparent attack range circles for all troops
+
+    - Time: Worst case O(n * r^2), Average case O(n * r^2) where n is troops and r is max attack range in pixels creates surfaces per troop
+    - Space: O(r^2) per troop for circle surfaces temporary
+    """
     if not arena:
         return
     

@@ -2,11 +2,15 @@ import os
 import pygame
 from typing import Dict, Optional, Tuple
 from assets.cache_manager import CacheManager
+from core.sorting import merge_sort_by_key
 
 class TowerAssetManager(CacheManager):
-    """Manages tower-specific assets: buildings, characters, and destroyed states."""
+    """
+    Manages tower-specific assets: buildings, characters, and destroyed states
+    Uses hash table caching for O(1) lookups
+    """
     
-    # Scaling multipliers for tower images
+    # scaling multipliers for tower images
     PRINCESS_TOWER_SCALE = 3.0
     KING_TOWER_SCALE = 2.5
     
@@ -17,15 +21,18 @@ class TowerAssetManager(CacheManager):
     
     def get_tower_assets(self, tower_type: int, team: int, is_alive: bool = True) -> Dict[str, Optional[pygame.Surface]]:
         """
-        Load complete tower asset set.
-        
+        Load complete tower asset set
+
         Args:
             tower_type: -1 (left princess), 0 (king), 1 (right princess)
             team: 1 or 2
             is_alive: True for active, False for destroyed
-        
+
         Returns:
             Dict with 'building', 'character', 'destroyed' keys
+
+        - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first load per asset
+        - Space: O(assets * w * h) for tower surfaces
         """
         cache_key = (tower_type, team, is_alive)
         
@@ -36,31 +43,34 @@ class TowerAssetManager(CacheManager):
         self.set_cached(cache_key, assets)
         return assets
     
-    def get_scaled_tower_sprite(self, tower_sprite: pygame.Surface, target_width: int, 
+    def get_scaled_tower_sprite(self, tower_sprite: pygame.Surface, target_width: int,
                                 target_height: int, tower_type: int, layer: str = "building") -> pygame.Surface:
         """
         Scale a tower sprite proportionally to fit within target dimensions.
         Maintains aspect ratio.
-        
+
         Args:
             tower_sprite: The original sprite surface
             target_width: Target width in pixels (tower's grid width)
             target_height: Target height in pixels (tower's grid height)
             tower_type: -1 or 1 for princess, 0 for king
             layer: Identifier for caching ('building', 'character', 'destroyed')
-        
+
         Returns:
             Scaled sprite that fits within target dimensions while maintaining aspect ratio
+
+        - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first scale
+        - Space: O(w*h) per scaled variant
         """
-        # Get original sprite dimensions
+        # get original sprite dimensions
         original_width, original_height = tower_sprite.get_size()
         
-        # Calculate scale to fit within target dimensions while maintaining aspect ratio
+        # calculate scale to fit within target dimensions while maintaining aspect ratio
         scale_x = target_width / original_width
         scale_y = target_height / original_height
-        scale = min(scale_x, scale_y)  # Use smaller scale to maintain aspect ratio
+        scale = min(scale_x, scale_y)  # we use smaller scale to maintain aspect ratio
         
-        # Calculate final scaled dimensions
+        # calculate final scaled dimensions
         scaled_width = int(original_width * scale)
         scaled_height = int(original_height * scale)
         
@@ -74,7 +84,18 @@ class TowerAssetManager(CacheManager):
         return scaled_sprite
         
     def _load_tower_assets(self, tower_type: int, team: int, is_alive: bool) -> Dict[str, Optional[pygame.Surface]]:
-        """Internal method to load tower assets from disk."""
+        """
+        Internal method to load tower assets from disk.
+
+        - Time: Worst case = Average case = O(f log f + s * w * h) where:
+            - f is number of files in tower folder (typically 1-2, so effectively O(1))
+            - s is sprites loaded (1-2)
+            - w/h are sprite dimensions
+        - Space: O(s * w * h) for loaded surfaces
+
+        NOTE: Sorting is needed because tower files have mixed naming conventions, this can be changed but we wanted to demonstate another system to sort files in a folder
+        With only 1-2 files per folder, O(f log f) almost O(1)
+        """
         result = {'building': None, 'character': None, 'destroyed': None}
         
         if not is_alive:
@@ -84,7 +105,8 @@ class TowerAssetManager(CacheManager):
             tower_path = os.path.join(self.assets_path, "tower", f"Team{team}", tower_folder)
             
             if os.path.exists(tower_path):
-                sprite_files = sorted([f for f in os.listdir(tower_path) if f.endswith('.png')])
+                list_of_sprite_files = [f for f in os.listdir(tower_path) if f.endswith('.png')]
+                sprite_files = merge_sort_by_key(list_of_sprite_files, key=lambda x: x.lower()) # sorted
                 
                 if tower_type == 0 and len(sprite_files) >= 2:
                     # King tower: building + character
@@ -97,13 +119,23 @@ class TowerAssetManager(CacheManager):
         return result
     
     def _load_destroyed_tower(self, tower_type: int) -> Optional[pygame.Surface]:
-        """Load destroyed tower sprite (team-agnostic)."""
+        """
+        Load destroyed tower sprite (team-agnostic).
+
+        - Time: Worst case = Average case = O(w*h) where w/h are the width and height of the tower sprite
+        - Space: O(w*h) for surface
+        """
         destroyed_name = "destroyed_king.png" if tower_type == 0 else "destroyed_princess.png"
         destroyed_path = os.path.join(self.assets_path, "tower", "any", destroyed_name)
         return self._load_image(destroyed_path)
     
     def _load_image(self, path: str) -> Optional[pygame.Surface]:
-        """Helper to load a single image."""
+        """
+        Helper to load a single image
+
+        - Time: Worst case = Average case = O(w*h) where w/h are the width and height of the tower sprite
+        - Space: O(w*h) for surface
+        """
         if not os.path.exists(path):
             return None
         try:
@@ -113,6 +145,11 @@ class TowerAssetManager(CacheManager):
             return None
     
     def clear_cache(self) -> None:
-        """Clear all caches."""
+        """
+        Clear all caches
+
+        - Time: Worst case = Average case = O(n) where n is cached items
+        - Space: O(1)
+        """
         super().clear_cache()
         self._scaled_cache.clear()

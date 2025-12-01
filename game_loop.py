@@ -11,13 +11,7 @@ from player import Player
 from troops.generic_troop import Troop
 from assets.asset_manager import AssetManager
 import pygame
-
-"""
-TODO: implement wizard
-TODO: implement baby dragon
-
-TODO: check if we can implement a graph for the location of the troops to see the distances or even a heap
-"""
+from troops.bot import GreedyBot
 
 colors = {
     0: (0, 0, 0),  # none
@@ -36,6 +30,7 @@ rows = int(BASE_GRID_HEIGHT*MULTIPLIER_GRID_HEIGHT)
 cols = int(rows / 16 * 9)
 DRAW_PLACABLE_CELLS = True
 
+
 """
 Global variables for the game loop
 """
@@ -50,8 +45,15 @@ time_location = None
 arena_background_surface = None
 arena_background_dirty = True
 asset_manager = AssetManager()
+bot = None
 
 def setup_arena():
+    """
+    Initializes pygame and creates the arena
+
+    - Time: Worst case = Average case = O(h * w) for arena grid creation and world generation
+    - Space: O(h * w) for arena grid
+    """
     global screen, clock, arena, tile_size, asset_manager, time_location
     # find optimal tile size
     tile_size = 800/rows # optimal for 32 is 25
@@ -69,6 +71,15 @@ def setup_arena():
     arena.arena_background_dirty = True
 
 def game_tick():
+    """
+    Processes one game tick - updates all troop movements
+
+    - Time: Worst case = Average case = O(n * (n + V + E)) where:
+        - n is the number of active troops
+        - For each troop: O(n) linear scan to find closest enemy + O(V + E) BFS pathfinding
+        - V = h * w grid cells, E = up to 8V edges for 8-directional movement
+    - Space: O(V) per troop for path storage, O(n * V) total in worst case
+    """
     # only every N frames
     if arena.frame_count % TICK_RATE == 0:
         for troop in list(arena.unique_troops):
@@ -76,7 +87,6 @@ def game_tick():
 
 """FONT"""
 def get_font(font_size=24):
-    """Get or create the font object"""
     return asset_manager.get_font(font_size)
 
 """GAME LOOP"""
@@ -97,24 +107,23 @@ while looping: # bigger loop for the game loop
     Card(name="skeleton 1", color="green", troop_class=Troop, troop_name="skeletons", asset_manager=asset_manager),
     ]
 
-    # show deck builder menu first
-    setup_arena()  # initialize pygame and screen
+    setup_arena()
     deck_p1 = run_deck_builder(screen, asset_manager)
     if deck_p1 is None:
-        break  # user closed window
+        break
 
-    #deck_p1 = Deck(cards)
     deck_p1.shuffle_cards()
     deck_p2 = Deck(cards)
     deck_p2.shuffle_cards()
 
     finish_battle_screen = None
-    setup_arena() # check if this is needed
+    
     player_1 = Player(name="Player 1", deck=deck_p1, team=1, arena=arena)
-    player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena)
+    player_2 = Player(name="Player 2", deck=deck_p2, team=2, arena=arena) 
     player_1.setup_hand()
     player_2.setup_hand()
 
+    bot = GreedyBot(player_2, arena)
 
     # the loop only works for player 1 input for now
     while True:
@@ -167,9 +176,14 @@ while looping: # bigger loop for the game loop
 
                             click_handled = True # in case we add other statments later 
                     
-        if arena.frame_count % 100 == 0 and selected_card is not None:
-            player_2.place_troop((3, 3), selected_card)
-            
+        #if arena.frame_count % 100 == 0 and selected_card is not None:
+        #    player_2.place_troop((3, 3), selected_card)
+        
+        if arena.frame_count % 2 == 0:
+            bot_card, bot_position = bot.think()
+            if bot_card and bot_position:
+                player_2.place_troop(bot_position, bot_card)
+  
 
         player_1.increase_elixir()    
         player_2.increase_elixir()

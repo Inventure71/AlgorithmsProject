@@ -1,12 +1,13 @@
 from math import inf
-import os
 import random
-import pygame
 from constants import *
 from arena.utils.random_utils import calculate_edge_to_edge_distance, is_cell_in_bounds, is_in_attack_range
 from arena.utils.find_path_bfs import find_path_bfs
 
 class Troop:
+    """
+    Base class for all units in the game (troops and towers)
+    """
     def __init__(
         self,
         name,
@@ -76,13 +77,21 @@ class Troop:
 
         """MOVEMENT"""
         self.troop_can_fly = troop_can_fly
-        self.raw_movement_speed = movement_speed
+        self.raw_movement_speed = (movement_speed * MULTIPLIER_GRID_HEIGHT / 2) # we divide by 2 just because the troops are a bit too fast, this can be fixed by changing the multiplier in the specs file but we feel like it is better to have more readable numbers there
         self.movement_accumulator = 0.0
         self.current_path = None
         self.current_path_index = 0
     
     """HELPER FUNCTIONS"""        
     def get_occupancy_grid(self):
+        """
+        Returns the appropriate occupancy grid dictionary for this troop type
+
+        - Time: O(1) returns reference to existing dictionary
+        - Space: O(1) no new allocation
+        
+        Note: A single 3D grid (grid[row][col][layer]) would add indexing overhead and complexity; two separate dicts are cleaner since ground and air units never collide
+        """
         if self.troop_can_fly:
             return self.arena.occupancy_grid_flying
         else:
@@ -94,6 +103,14 @@ class Troop:
         #self.is_targetting_something = None
         
     def find_closest_target(self, got_blocked=False):
+        """
+        Finds the closest valid target and path to it
+        
+        - Time: O(n + BFS) where n is troop count for find_closest_enemy_troop and BFS is O(V + E) for pathfinding
+        - Space: O(V) for BFS visited set and path
+        
+        Note: A priority queue would require O(n log n) updates every frame as troops move and distances change; linear O(n) scan is faster for fewer than 50 troops
+        """
         # by default troops attack the tower, so we don't need to check if the distance from the tower is in range
 
         # we check if the troop is more than half to the right which means it would be in the right section and should need to check the right tower 
@@ -141,7 +158,7 @@ class Troop:
             target_grid = closest_troop.get_occupancy_grid()
             collision_grid = self.get_occupancy_grid()
 
-            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something)
             self.current_path_index = 0
 
         else:
@@ -152,15 +169,24 @@ class Troop:
         return path 
 
     def find_closest_enemy_troop(self): # this should only be run if no target is active.
+        """
+        Finds the closest enemy troop using linear scan
+            
+        - Time: O(n) where n is the number of troops
+        - Space: O(1)
+            
+        Why linear scan instead of utilizing a sorted grid such as the one we have due to the visualization
+        - Finding closest requires 2D Euclidean distance, not 1D sorting
+        - With ~50 troops max, O(n) scan is faster than maintaining spatial indices
+        - Troops move every frame, so index updates would cost more than linear scan saves
+        """
         closest_troop = None
         minimum_distance = inf
-        
-        checked_troops = set()
-        
-        for troop in self.arena.unique_troops: # we could use arena.unique_troops instead of occupancy_grid
+                
+        for troop in self.arena.unique_troops:
             #troop = occupancy_grid[cell]
             # skip if already checked, same team, or dead
-            if troop in checked_troops or troop.team == self.team or not troop.is_alive:
+            if troop.team == self.team or not troop.is_alive:
                 continue
             if troop.troop_can_fly and not self.troop_can_target_air:
                 continue # the troop can't see the target
@@ -168,9 +194,7 @@ class Troop:
             if self.troop_favorite_target != "any" and troop.troop_type != self.troop_favorite_target:
                 # we only target the favourite target types
                 continue
-            
-            checked_troops.add(troop)
-            
+                        
             # using center-to-center distance for consistency
             distance = calculate_edge_to_edge_distance(self, troop)
             
@@ -180,7 +204,14 @@ class Troop:
         
         return minimum_distance, closest_troop
 
-    def occupied_cells(self, occupancy_grid={}):
+    def occupied_cells(self):
+        """
+        Returns dictionary of all cells this troop occupies
+
+        - Time: Worst case = Average case = O(tw * th) where tw/th are troop width and height iterates over all cells
+        - Space: O(tw * th) for dictionary entries
+        """
+        occupancy_grid = {}
         if self.location is None or self.arena is None:
             raise ValueError("Location and arena must be set before calling occupied_cells")
 
@@ -194,6 +225,14 @@ class Troop:
 
     """SPRITE LOADING"""
     def swap_sprite(self, moving=True, reset_attack=False):
+        """
+        Cycles through sprite animations (moving/attack states) and loads appropriate sprite
+
+        - Time: Worst case = Average case = O(1) cached, O(w*h) on first load where w*h=256^2=65k pixels for file I/O/standardization
+        - Space: O(w*h) per sprite surface in cache (65k pixels typical)
+
+        Note: By default the frame count check is always true (integer % 1 == 0), so runs every call
+        """
         if self.arena.frame_count % 1 == 0:
             if moving:
                 if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
@@ -210,7 +249,17 @@ class Troop:
 
     """MAIN FUNCTIONS"""
     def move_to_tower(self, got_blocked=False):
-        if not self.is_active:
+        """
+        Main movement logic: finds target, paths to it, moves along path and if close enough attacks
+        
+        - Time: Worst case = Average case = O(n + V + E) where:
+            - n is troop count for find_closest_enemy_troop linear scan
+            - V + E for BFS pathfinding (V = grid cells, E = edges up to 8V)
+        - Space: O(V) for path storage and BFS visited set
+
+        NOTE:Uses BFS for pathfinding because it guarantees shortest path on unweighted grids
+        """
+        if not self.is_active or not self.is_alive:
             return
         
         path = None
@@ -235,7 +284,7 @@ class Troop:
                     target_grid = self.is_targetting_something.get_occupancy_grid()
 
                     #print(f"{self.name} not in range, finding pabth to troop")
-                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
                     #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
                     self.current_path = path
                 else:
@@ -296,6 +345,12 @@ class Troop:
                 self.swap_sprite(moving=True)
     
     def attack(self):
+        """
+        Handles attack timing and damage application in area of effect
+
+        - Time: Worst case = Average case = O(r^2) where r is attack_tile_radius checks cells in square around target
+        - Space: O(1) no additional allocations
+        """
         if self.is_alive and self.is_active:
             if self.in_process_attack:
                 if (self.arena.frame_count-self.in_process_attack) >= self.attack_speed:
@@ -310,13 +365,13 @@ class Troop:
                             loc_to_check = (loc[0]+i_row, loc[1]+i_col)
                             if self.troop_can_target_air:
                                 if loc_to_check in self.arena.occupancy_grid_flying:
-                                    if self.arena.occupancy_grid_flying[loc_to_check] != self:
+                                    if self.arena.occupancy_grid_flying[loc_to_check] != self and self.team != self.arena.occupancy_grid_flying[loc_to_check].team:
                                         self.arena.occupancy_grid_flying[loc_to_check].take_damage(self.damage, source_troop=self)
                                         if self.attack_tile_radius == 0:
                                             continue # we don't want to do damage in both ground and air cells if the radius is 0
 
                             if loc_to_check in self.arena.occupancy_grid:
-                                if self.arena.occupancy_grid[loc_to_check] != self:
+                                if self.arena.occupancy_grid[loc_to_check] != self and self.team != self.arena.occupancy_grid[loc_to_check].team:
                                     self.arena.occupancy_grid[loc_to_check].take_damage(self.damage, source_troop=self)
 
                     #self.is_targetting_something.take_damage(self.damage, source_troop=self) old system
@@ -335,6 +390,12 @@ class Troop:
         return False
 
     def take_damage(self, damage, source_troop=None):
+        """
+        Applies damage and handles death/removal
+
+        - Time: Worst case O(tw * th), Average case O(1) if unit survives, O(tw * th) if unit dies for removal
+        - Space: O(1) no additional space
+        """
         if self.health - damage <= 0:
             self.is_alive = False
             if self.is_tower:
@@ -344,26 +405,3 @@ class Troop:
         else:
             self.health -= damage
             print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")
-
-    """REMOVABLE"""          
-    def move_random_target(self):
-        if  not self.target or self.location == self.target:
-            self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-        
-        path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), {}, self, goal_cell=self.target)
-        
-        if path:
-            for path_index in range(1, int(self.raw_movement_speed) + 1):
-                if path_index < len(path):
-                    if not self.arena.move_unit(self, path[path_index]):
-                        print("ERROR MOVING")
-                        self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-                    else:
-                        self.location = path[path_index]
-                        
-                    
-        else:
-            print("NO PATH FOUND")
-            self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-
-        

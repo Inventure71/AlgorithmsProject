@@ -4,7 +4,10 @@ from typing import Optional, Tuple, Dict, List
 from assets.cache_manager import CacheManager
 
 class UIAssetManager(CacheManager):
-    """Manages UI elements: cards, icons, and backgrounds."""
+    """
+    Manages UI elements: cards, icons, and backgrounds
+    Uses multiple specialized caches for different asset types
+    """
     
     def __init__(self, assets_path: str):
         super().__init__()
@@ -29,10 +32,17 @@ class UIAssetManager(CacheManager):
             "skeletons": "skeletons",
             "spear goblin": "spear_goblin",
             "bats": "bats",
+            "wizard": "wizard",
+            "baby dragon": "baby_dragon",
         }
     
     def get_card_image(self, troop_name: str) -> Optional[pygame.Surface]:
-        """Load a card image for a troop."""
+        """
+        Load a card image for a troop
+        
+        - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first load
+        - Space: O(w*h) per card image
+        """
         if self.has_cached(troop_name):
             return self.get_cached(troop_name)
         
@@ -50,7 +60,14 @@ class UIAssetManager(CacheManager):
         return card_image
     
     def get_scaled_card(self, troop_name: str, width: int, height: int) -> Optional[pygame.Surface]:
-        """Get a scaled card image."""
+        """
+        Get a scaled card image
+
+        - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first scale
+        - Space: O(w*h) per scaled variant
+
+        Alternative: Could use recursion for scaling; runtime scaling handles UI size changes.
+        """
         card_image = self.get_card_image(troop_name)
         if not card_image:
             return None
@@ -64,7 +81,12 @@ class UIAssetManager(CacheManager):
         return scaled
     
     def get_menu_background(self, width: int, height: int) -> Optional[pygame.Surface]:
-        """Load and scale arena menu background."""
+        """
+        Load and scale arena menu background
+        
+        - Time: O(1) cached, O(w*h) on first load and scale
+        - Space: O(w*h) for background surface
+        """
         cache_key = ("menu_background", width, height)
         
         if cache_key in self._scaled_cache:
@@ -81,7 +103,12 @@ class UIAssetManager(CacheManager):
         return None
     
     def get_arena_background(self, width: int, height: int) -> Optional[pygame.Surface]:
-        """Load and scale arena background."""
+        """
+        Load and scale arena background
+        
+        - Time: O(1) cached, O(w*h) on first load and scale
+        - Space: O(w*h) for background surface
+        """
         cache_key = ("arena_bg", width, height)
         
         if cache_key in self._scaled_cache:
@@ -98,7 +125,12 @@ class UIAssetManager(CacheManager):
         return None
     
     def get_winner_screen(self, width: int, height: int) -> Optional[pygame.Surface]:
-        """Load winner image"""
+        """
+        Load winner image
+        
+        - Time: O(1) cached, O(w*h) on first load and scale
+        - Space: O(w*h) for surface
+        """
         cache_key = ("winner_screen", width, height)
 
         if cache_key in self._scaled_cache:
@@ -114,7 +146,12 @@ class UIAssetManager(CacheManager):
         return None
 
     def get_crown_image(self, crown_team: int, size) -> Optional[pygame.Surface]:
-        """Load crown image for a team."""
+        """
+        Load crown image for a team
+        
+        - Time: O(1) cached, O(size^2) on first load and scale
+        - Space: O(size^2) per scaled crown
+        """
         cache_key = (crown_team, size, size)
 
         if cache_key in self._scaled_cache:
@@ -136,7 +173,12 @@ class UIAssetManager(CacheManager):
         return None
 
     def get_elixir_icon(self, size: int = 20) -> Optional[pygame.Surface]:
-        """Load elixir icon at specified size."""
+        """
+        Load elixir icon at specified size
+        
+        - Time: O(1) cached, O(size^2) on first load and scale
+        - Space: O(size^2) for surface
+        """
         cache_key = ("elixir", size, size)
         
         if cache_key in self._scaled_cache:
@@ -152,10 +194,13 @@ class UIAssetManager(CacheManager):
         
         return None
 
-    def get_card_overlay(self, width: int, height: int, 
+    def get_card_overlay(self, width: int, height: int,
                         color: Tuple[int, int, int, int] = (128, 128, 128, 128)) -> pygame.Surface:
         """
-        Get cached transparent overlay surface for expensive cards.
+        Get cached transparent overlay surface for expensive cards
+
+        - Time: Worst case O(w*h), Average case O(1) cached, O(w*h) on first create
+        - Space: O(w*h) per overlay variant
         """
         cache_key = (width, height, color)
         
@@ -168,7 +213,12 @@ class UIAssetManager(CacheManager):
         return overlay
     
     def get_elixir_segment_positions(self, bar_width: int, max_elixir: int) -> List[Tuple[int, int]]:
-        """Get cached segment positions for elixir bar."""
+        """
+        Get cached segment positions for elixir bar
+
+        - Time: Worst case O(max_elixir), Average case O(1) cached, O(max_elixir) on first calculation
+        - Space: O(max_elixir) for positions list
+        """
         cache_key = (bar_width, max_elixir)
         
         if cache_key in self._segment_cache:
@@ -187,7 +237,12 @@ class UIAssetManager(CacheManager):
         return segments
 
     def _load_image(self, path: str, convert_alpha: bool = True) -> Optional[pygame.Surface]:
-        """Helper to load a single image."""
+        """
+        Helper to load a single image
+
+        - Time: Worst case = Average case = O(w*h)
+        - Space: O(w*h) for surface
+        """
         if not os.path.exists(path):
             return None
         try:
@@ -198,7 +253,12 @@ class UIAssetManager(CacheManager):
             return None
     
     def clear_cache(self) -> None:
-        """Clear all caches."""
+        """
+        Clear all caches
+
+        - Time: Worst case = Average case = O(n) where n is total cached items across all caches
+        - Space: O(1)
+        """
         super().clear_cache()
         self._scaled_cache.clear()
         self._overlay_cache.clear()

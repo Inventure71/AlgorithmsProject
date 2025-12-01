@@ -2,6 +2,9 @@ import pygame
 from constants import *
 from core.sorting import sort_for_visualization
 
+placeable_overlay_surface = None
+placeable_overlay_team = None
+
 colors = {
     0: (0, 0, 0),  # none
     1: (0, 214, 47),  # grass
@@ -9,11 +12,17 @@ colors = {
     3: (133, 133, 133),   # bridge
     4: (191, 143, 36), # tower p1
     5: (200, 100, 100), # tower p2
-    9: (200, 100, 100, 100) # transparent red
+    9: (200, 100, 100, 150) # transparent red
 }
 
 def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=None, DRAW_PLACABLE_CELLS=False, team=1):
-    global arena_background_surface
+    """
+    Draws the arena grid and optional placeable cell overlay
+
+    - Time: Worst case O(h * w), Average case O(1) when using cached surfaces
+    - Space: O(h * w) for cached background + O(h * w) for cached overlay
+    """
+    global arena_background_surface, placeable_overlay_surface, placeable_overlay_team
 
     arena_width = int(cols * tile_size)
     arena_height = int(rows * tile_size)
@@ -60,21 +69,35 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
     
     # only draw placable cells overlay if needed (this changes dynamically)
     if DRAW_PLACABLE_CELLS or selected_card is not None:
-        if selected_card:
-            troop_can_fly = selected_card.troop_can_fly
-        else:
-            troop_can_fly = False
-        for y, row in enumerate(arena.grid):
-            for x, value in enumerate(row):
-                if arena.is_placable_cell(y, x, team=team, is_flying=troop_can_fly):
-                    x_pos = int(x * tile_size)
-                    y_pos = int(y * tile_size)
-                    width = int((x + 1) * tile_size) - x_pos
-                    height = int((y + 1) * tile_size) - y_pos
-                    rect = pygame.Rect(x_pos, y_pos, width, height)
-                    pygame.draw.rect(screen, colors[9], rect)
+        if placeable_overlay_surface is None or arena.arena_background_dirty or placeable_overlay_team != team:
+            placeable_overlay_surface = pygame.Surface((arena_width, arena_height), pygame.SRCALPHA) # we need to create a separate surface for the overlay in order to achieve transparency
+            placeable_overlay_team = team
+
+            for y, row in enumerate(arena.grid):
+                for x, value in enumerate(row):
+                    # we draw as red the cells where we CANNOT place a troop so we use not is_placable_cell
+                    if not arena.is_placable_cell(y, x, team=team, is_flying=False):
+                        x_pos = int(x * tile_size)
+                        y_pos = int(y * tile_size)
+                        width = int((x + 1) * tile_size) - x_pos
+                        height = int((y + 1) * tile_size) - y_pos
+                        rect = pygame.Rect(x_pos, y_pos, width, height)
+                        pygame.draw.rect(placeable_overlay_surface, colors[9], rect)
+
+        screen.blit(placeable_overlay_surface, (0, 0))
 
 def draw_units(arena, screen, tile_size, asset_manager):
+    """
+    Draws all troops in render order (top to bottom for proper layering)
+
+    - Time: Worst case = Average case = O(n log n) for merge sort + O(n) for drawing
+    - Space: O(n) for sorted list copy
+
+    NOTE: Sorting is preferred over maintaining a sorted linked list because:
+    - Troops move every frame, invalidating sorted order
+    - Linked list insertion would be O(n) per move vs O(n log n) once per frame
+    - Merge sort is stable, preserving relative order of same-Y troops
+    """
     # using the set() to get unique troops (avoid drawing same troop multiple times)
     for troop in sort_for_visualization(arena.unique_troops, ascending_order=True):
         if troop.location is None:
@@ -113,7 +136,12 @@ def draw_units(arena, screen, tile_size, asset_manager):
         draw_healthbar(troop, screen, tile_size, arena)
 
 def draw_tower(troop, screen, tile_size):
-    """Draw a tower with its assets centered on the tower's grid position."""
+    """
+    Draw a tower with its assets centered on the tower's grid position
+
+    - Time: Worst case O(1), Average case O(1) cached sprite lookup and single blit operation
+    - Space: O(1) uses cached sprites
+    """
     if not troop.asset_manager or troop.tower_number is None:
         # Fallback to colored rectangle
         visual_width = int(troop.width * tile_size)
@@ -199,7 +227,12 @@ def draw_tower(troop, screen, tile_size):
         pygame.draw.rect(screen, troop.color, (tower_top_left_x, tower_top_left_y, tower_width, tower_height))
 
 def draw_healthbar(troop, screen, tile_size, arena):
-    """Draw a healthbar above a troop or tower"""
+    """
+    Draw a healthbar above a troop or tower
+
+    - Time: Worst case O(1), Average case O(1) constant calculations and rectangle draws
+    - Space: O(1) no allocations
+    """
     if not troop.is_alive or troop.location is None:
         return
     
@@ -217,7 +250,7 @@ def draw_healthbar(troop, screen, tile_size, arena):
         visual_width = int(troop.width * tile_size)
         x_pos = int(troop.location[1] * tile_size)
         y_pos = int(troop.location[0] * tile_size)
-        bar_y = y_pos - 8  # 8 pixels above the tower (TODO: make this a variable)
+        bar_y = y_pos + HEALTHBAR_OFFSET_Y # N pixels below the tower (if n is negative than it is above)
     else:
         # regular troops: position above the sprite
         visual_scale_x = arena.width / 18.0 * 2
@@ -229,7 +262,7 @@ def draw_healthbar(troop, screen, tile_size, arena):
         cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)
         
         image_y = cell_center_y - visual_height // 2
-        bar_y = image_y - 8  # 8 pixels above the sprite (TODO: make this a variable)
+        bar_y = image_y + HEALTHBAR_OFFSET_Y 
         x_pos = cell_center_x - visual_width // 2
     
     # healthbar dimensions

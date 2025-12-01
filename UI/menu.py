@@ -4,16 +4,38 @@ from deck.deck import Deck
 from deck.stats import stats
 from troops.generic_troop import Troop
 from UI.components.unit_components.button import Button
+from UI.components.hand_ui import draw_elixir_icon
 from core.sorting import merge_sort_by_key 
 import random
 
+"""
+NOTE: The 'selected' list uses a Python list instead of a dictionary because:
+- Hand size is constant (<=8 cards), making O(n) operations effectively O(1)
+- Lists preserve insertion order for display consistency
+- List operations like append/remove are more readable for this use case
+- A dictionary would require additional key management for almost no performance benefit
+"""
 
 def run_deck_builder(screen, asset_manager):
+    """
+    Runs the deck builder UI - allows player to select 8 cards
+
+    - Time: Worst case O(c log c), Average case O(c) per frame where c is card count, plus O(c log c) for sorting when triggered
+    - Space: O(c) for cards list + O(8) for selected deck
+    """
     global average_elixir_cost
     average_elixir_cost = 0
     selected = []
 
     def calculate_average_elixir_cost():
+        """
+        Calculates average elixir cost for the currently selected cards
+
+        - Time: Worst case O(s), Average case O(s) where s is selected cards
+        - Space: O(1)
+
+        Uses linear sum
+        """
         global average_elixir_cost
         if len(selected) == 0:
             average_elixir_cost = 0
@@ -21,24 +43,61 @@ def run_deck_builder(screen, asset_manager):
             average_elixir_cost = sum(card.cost for card in selected) / len(selected)
 
     def add_card_to_deck(card):
+        # TODO: should we use my implementation of linked list here?
+        """
+        Adds a card to the selected deck and updates average elixir cost
+
+        - Time: Worst case O(s), Average case O(s) append plus average calculation
+        - Space: O(1)
+        """
         selected.append(card)
         calculate_average_elixir_cost()
     
     def remove_card_from_deck(card):
+        """
+        Removes a card from the selected deck and updates average elixir cost
+
+        - Time: Worst case O(s), Average case O(s) for linear search removal
+        - Space: O(1)
+
+        Alternative: Hash table lookup would be O(1)
+        """
         if card in selected:
             selected.remove(card)
         calculate_average_elixir_cost()
 
     def on_sort():
+        """
+        Sorts cards in the deck builder by elixir cost using merge sort
+
+        - Time: Worst case O(c log c), Average case O(c log c) where c is card count
+        - Space: O(c) for merge sort arrays
+
+        Stable sort preserves equal-cost order
+        """
         cards[:] = merge_sort_by_key(cards, key=lambda c: c.cost)
 
-    def on_confirm(): 
+    def on_confirm():
+        """
+        Confirms the current deck selection and returns a new deck copy
+
+        - Time: Worst case O(s), Average case O(s) where s is selected cards to copy
+        - Space: O(s) for deck copy
+        """
         if len(selected) == 8:
             return Deck(selected.copy())
         else:
             return None
 
     def on_auto_fill():
+        """
+        Automatically fills the deck up to 8 cards with random unique cards
+
+        - Time: Worst case O(8-s), Average case O(8-s) random selections where s is current selected size
+        - Space: O(remaining) for temporary list of available cards
+
+        Uses random.choice for simplicity
+        """
         if len(selected) < 8:
             temp_unique_cards = cards.copy()
             for card in selected:
@@ -71,6 +130,11 @@ def run_deck_builder(screen, asset_manager):
 
     
     def draw_card(card, x, y, dimmed=False):
+        """
+        Time: Average case O(1) per frame using cached scaled images
+              Worst case O(W*H) on first load/scale.
+        Space: O(1) per call reusing cached surfaces, blits cached card image and optional overlay
+        """
         img = card.get_card_image(CW, CH)
         if img: screen.blit(img, (x, y))
         if dimmed: screen.blit(asset_manager.get_card_overlay(CW, CH, (0, 0, 0, 160)), (x, y))
@@ -126,7 +190,21 @@ def run_deck_builder(screen, asset_manager):
             row, col = i // 4, i % 4
             x, y = deck_x + col * (CW + SP), deck_y + row * (CH + SP)
             pygame.draw.rect(screen, (50, 45, 60), (x, y, CW, CH), 2)
-            if i < len(selected): draw_card(selected[i], x, y)
+            if i < len(selected):
+                card = selected[i]
+                draw_card(card, x, y)
+                icon_size = 20
+                icon_x = x + (CW - icon_size) // 2
+                icon_y = y + CH - icon_size + 2
+                draw_elixir_icon(
+                    icon_x,
+                    icon_y,
+                    icon_size,
+                    asset_manager,
+                    screen,
+                    text_value=card.cost,
+                    text_size=14,
+                )
         
         btn_sort.draw(screen)
         btn_auto_fill.draw(screen)
@@ -147,10 +225,24 @@ def run_deck_builder(screen, asset_manager):
             row, col = i // 4, i % 4
             x = grid_x + col * (CW + SP)
             y = cards_area_y + row * (CH + SP + 15) - scroll_y
-            if y + CH < cards_area_y or y > cards_area_y + cards_area_h: continue
+            if y + CH < cards_area_y or y > cards_area_y + cards_area_h: 
+                continue
+
             draw_card(c, x, y, dimmed=(c in selected))
-            # elixir cost
-            screen.blit(asset_manager.get_text_surface(str(c.cost), 14, (255, 200, 255)), (x + CW//2 - 4, y + CH + 1))
+
+            # elixir icon + cost under each card (Clash Royale style)
+            icon_size = 20
+            icon_x = x + (CW - icon_size) // 2
+            icon_y = y + CH - icon_size + 2
+            draw_elixir_icon(
+                icon_x,
+                icon_y,
+                icon_size,
+                asset_manager,
+                screen,
+                text_value=c.cost,
+                text_size=14,
+            )
         
         # reset clipping to allow drawing everywhere again
         screen.set_clip(None)

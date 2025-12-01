@@ -2,9 +2,12 @@ import os
 import pygame
 from typing import Tuple, Optional, Dict
 from assets.cache_manager import CacheManager
+from core.sorting import merge_sort_by_key
 
 class SpriteManager(CacheManager):
-    """Manages troop sprites and their scaling."""
+    """
+    Manages troop sprites and their scaling and uses hash tables for O(1) sprite lookups
+    """
 
     STANDARD_SPRITE_SIZE = 256  # 256x256 pixels
     
@@ -30,16 +33,21 @@ class SpriteManager(CacheManager):
             "skeletons": "skeletons",
             "spear goblin": "spear_goblin",
             "bats": "bats",
+            "wizard": "wizard",
+            "baby dragon": "baby_dragon",
         }
     
     def get_sprite(self, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
         """
-        load a troop sprite for a specific team and sprite variant, standardized to STANDARD_SPRITE_SIZE.
+        Load a troop sprite for a specific team and sprite variant, standardized to STANDARD_SPRITE_SIZE.
         
         Args:
             troop_name: Name of the troop
             team: Team number (1 or 2)
             sprite_number: Which sprite to load (1, 2, or 3 for walking1, walking2, attack)
+        
+        - Time: O(1) cached, O(w*h) on first load for file I/O and standardization
+        - Space: O(w*h) per sprite surface
         """
         cache_key = (troop_name, team, sprite_number)
         
@@ -52,7 +60,12 @@ class SpriteManager(CacheManager):
         return standardized_sprite
 
     def _standardize_sprite(self, sprite: pygame.Surface, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
-        """Standardize a sprite to STANDARD_SPRITE_SIZE while preserving aspect ratio."""
+        """
+        Standardize a sprite to STANDARD_SPRITE_SIZE while preserving aspect ratio.
+        
+        - Time: O(w*h) for scaling operation
+        - Space: O(STANDARD_SIZE^2) for new surface
+        """
         cache_key = (troop_name, team, sprite_number)
         
         if cache_key in self._standardized_cache:
@@ -86,7 +99,12 @@ class SpriteManager(CacheManager):
         return standardized_sprite
     
     def get_scaled_sprite(self, sprite: pygame.Surface, sprite_number: int, width: int, height: int) -> pygame.Surface:
-        """Get a scaled version of a sprite with uniform scaling to fill the entire area."""
+        """
+        Get a scaled version of a sprite with uniform scaling to fill the entire area
+        
+        - Time: O(1) cached, O(w*h) on first scale
+        - Space: O(w*h) per scaled variant
+        """
         # scale uniformly to exact target dimensions (no aspect ratio preservation)
         # this ensures all troops fill their designated area consistently
         cache_key = (id(sprite), sprite_number, width, height)
@@ -100,7 +118,16 @@ class SpriteManager(CacheManager):
         return scaled_sprite
 
     def _load_sprite(self, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
-        """Internal method to load sprite from disk."""
+        """
+        Internal method to load sprite from disk using direct filename access
+
+        - Time: Worst case = Average case = O(w*h) for file I/O and decoding
+        - Space: O(w*h) for loaded surface
+
+        NOTE: Sprites are named 0.png, 1.png, 2.png (movement1, movement2, attack)
+        so we construct the filename directly instead of listing/sorting the directory (old implemenation)
+        This is O(1) vs O(n log n) for sorted directory listing
+        """
         troop_folder = self.troop_folder_map.get(troop_name.lower())
         if not troop_folder:
             return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
@@ -110,20 +137,17 @@ class SpriteManager(CacheManager):
         if not os.path.exists(sprite_path):
             return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
         
-        sprite_files = sorted([f for f in os.listdir(sprite_path) if f.endswith('.png')]) #TODO: use a core sorting algorithm
-
-        if not sprite_files:
-            return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
+        # Direct filename construction - O(1) instead of directory listing + sorting
+        sprite_file = os.path.join(sprite_path, f"{sprite_number}.png")
         
-        # sprite_index = sprite_number 
-        if len(sprite_files) > sprite_number:
-            sprite_index = sprite_number
-        else:
-            sprite_index = 0 # fallback to first sprite
-            print(f"Sprite number {sprite_number} not found, falling back to first sprite for troop {troop_name}")
+        if not os.path.exists(sprite_file):
+            # Fallback to 0.png if requested sprite doesn't exist
+            sprite_file = os.path.join(sprite_path, "0.png")
+            if not os.path.exists(sprite_file):
+                return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
+            print(f"Sprite {sprite_number}.png not found, falling back to 0.png for troop {troop_name}")
 
         try:
-            sprite_file = os.path.join(sprite_path, sprite_files[sprite_index])
             return pygame.image.load(sprite_file).convert_alpha()
         except Exception as e:
             print(f"Error loading sprite: {e}")
@@ -131,13 +155,23 @@ class SpriteManager(CacheManager):
     
     
     def _create_fallback_surface(self, width: int, height: int) -> pygame.Surface:
-        """Create a fallback colored surface."""
+        """
+        Create a fallback colored surface
+
+        - Time: Worst case = Average case = O(w*h) for surface creation and fill
+        - Space: O(w*h) for surface
+        """
         surface = pygame.Surface((width, height))
         surface.fill((128, 128, 128))
         return surface
     
     def clear_cache(self) -> None:
-        """Clear all caches."""
+        """
+        Clear all caches
+
+        - Time: Worst case = Average case = O(n) where n is total cached items
+        - Space: O(1) frees memory
+        """
         super().clear_cache()
         self._scaled_cache.clear()
         self._standardized_cache.clear()
