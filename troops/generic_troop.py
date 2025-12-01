@@ -151,15 +151,26 @@ class Troop:
 
         
         if self.attack_aggro_range >= minimum_distance_to_troop >= 0 and closest_troop is not None:
-            # select troop (this also includes the tower)
-            self.is_targetting_something = closest_troop
-            #print("targetting troop", closest_troop.name)
+            should_lock_on = True # by default we lock on the troop
+            
+            # troops should not lock on the towers using the aggro range, they use the actual attack range, if something else is in the aggro range before that then they attack that troop not the tower
+            if closest_troop.is_tower:
+                if self.attack_range < minimum_distance_to_troop:
+                    should_lock_on = False  # tower is in aggro range but not attack range
+            
+            if should_lock_on:
+                # select troop (this also includes the tower)
+                self.is_targetting_something = closest_troop
+                #print("targetting troop", closest_troop.name)
 
-            target_grid = closest_troop.get_occupancy_grid()
-            collision_grid = self.get_occupancy_grid()
+                target_grid = closest_troop.get_occupancy_grid()
+                collision_grid = self.get_occupancy_grid()
 
-            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something)
-            self.current_path_index = 0
+                path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something)
+                self.current_path_index = 0
+            else:
+                # tower is in aggro range but not attack range, we walk toward it without locking on it
+                self.is_targetting_something = None
 
         else:
             # we select tower just for walking in that direction, no locking on it. 
@@ -194,7 +205,7 @@ class Troop:
             if self.troop_favorite_target != "any" and troop.troop_type != self.troop_favorite_target:
                 # we only target the favourite target types
                 continue
-                        
+            
             # using center-to-center distance for consistency
             distance = calculate_edge_to_edge_distance(self, troop)
             
@@ -389,12 +400,16 @@ class Troop:
                     self.in_process_attack = None
                     return True
             
-                elif (self.arena.frame_count-self.in_process_attack ) >= self.attack_speed * 0.40:
-                    self.swap_sprite(moving=False, reset_attack=True)
+                elif (self.arena.frame_count-self.in_process_attack) >= self.attack_speed * 0.70:
+                    self.swap_sprite(moving=False, reset_attack=False)  # Attack sprite (windup before hit)
+            
+                elif (self.arena.frame_count-self.in_process_attack) >= self.attack_speed * 0.40:
+                    self.swap_sprite(moving=False, reset_attack=True)  # Idle sprite (charging)
+            
             
             else:
                 self.in_process_attack = self.arena.frame_count
-                self.swap_sprite(moving=False, reset_attack=False)
+                self.swap_sprite(moving=True) # HEREEEEEE
 
             return True
         print(f"{self.name} is dead or inactive, cannot attack")

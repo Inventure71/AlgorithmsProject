@@ -242,7 +242,7 @@ while looping: # bigger loop for the game loop
         if finish_battle_screen.restart_clicked:
             break
         
-        if finish_battle_screen.main_menu_clicked:
+        if finish_battle_screen.quit_game_clicked:
             looping = False
             break
 

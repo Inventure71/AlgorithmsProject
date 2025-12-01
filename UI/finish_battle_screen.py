@@ -13,7 +13,7 @@ class FinishBattleScreen:
         self.buttons = []
 
         self.restart_clicked = False
-        self.main_menu_clicked = False
+        self.quit_game_clicked = False
         
         self.winner_team = None
         self.number_of_crowns = None
@@ -64,14 +64,14 @@ class FinishBattleScreen:
 
         self.buttons.append(Button(
             start_x + button_width + spacing, button_y, button_width, button_height,
-            "Main Menu",
+            "Quit Game",
             self.asset_manager.get_font(24),
             (40, 40, 199),
-            self.go_to_main_menu
+            self.quit_game
         ))
         
-    def go_to_main_menu(self):
-        self.main_menu_clicked = True
+    def quit_game(self):
+        self.quit_game_clicked = True
     
     def restart(self):
         self.restart_clicked = True
