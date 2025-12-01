@@ -22,7 +22,7 @@ class Troop:
         height,
         color,
         team,
-        location = None,
+        location = (-1,-1), # this way the location will never be None
         arena = None,
         asset_manager = None,
         scale_multiplier = 1,
@@ -150,7 +150,7 @@ class Troop:
             path = find_path_bfs(self.location, self.arena.grid, {}, {}, self, cell_type=tower_to_find)
 
         
-        if self.attack_aggro_range >= minimum_distance_to_troop >= 0:
+        if self.attack_aggro_range >= minimum_distance_to_troop >= 0 and closest_troop is not None:
             # select troop (this also includes the tower)
             self.is_targetting_something = closest_troop
             #print("targetting troop", closest_troop.name)
@@ -235,7 +235,7 @@ class Troop:
         """
         if self.arena.frame_count % ANIMATION_RATE == 0:
             if moving:
-                if self.sprite_number >= 1: # we have 3 sprites so we cycle through them
+                if self.sprite_number >= 1: # we have 3 sprites so we cycle through them but 0 and 1 are movement and 2 is attack  
                     self.sprite_number = 0 # moving sprite 1
                 else:
                     self.sprite_number = 1 # moving sprite 2
@@ -328,7 +328,7 @@ class Troop:
                 self.reset_path() # we cleanup because we finished the path
                 return 
             
-            if is_in_attack_range(self, self.is_targetting_something):
+            if self.is_targetting_something is not None and is_in_attack_range(self, self.is_targetting_something):
                 #print(f"{self.name} is in attack range of {self.is_targetting_something.name}, no need to move, attacking")
                 self.attack()
                 return
@@ -358,6 +358,9 @@ class Troop:
         """
         if self.is_alive and self.is_active:
             if self.in_process_attack:
+                if not self.is_targetting_something:
+                    return False # for some reason the troop is not targetting something, we return false
+
                 if (self.arena.frame_count-self.in_process_attack) >= self.attack_speed:
                     # attack_tile_radius
                     # we expand the damage in all directions from the location of this troop
@@ -412,4 +415,4 @@ class Troop:
                 self.arena.remove_unit(self)
         else:
             self.health -= damage
-            print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")
+            #print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")

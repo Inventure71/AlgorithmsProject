@@ -99,7 +99,7 @@ def generate_tower(
             
     return tower  # return the tower for potential use
 
-def generate_mock_bridges(width, height, arena, height_of_river, bridge_width=1):
+def generate_mock_bridges(width, height, arena, height_of_river, bridge_width=2):
     """
     Creates bridge cells at two positions across the river
 

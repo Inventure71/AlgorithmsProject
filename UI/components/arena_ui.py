@@ -4,15 +4,19 @@ from core.sorting import sort_for_visualization
 
 placeable_overlay_surface = None
 placeable_overlay_team = None
+arena_background_surface = None
 
 colors = {
     0: (0, 0, 0),  # none
     1: (0, 214, 47),  # grass
     2: (0, 157, 214),  # water
     3: (133, 133, 133),   # bridge
-    4: (191, 143, 36), # tower p1
-    5: (200, 100, 100), # tower p2
-    9: (200, 100, 100, 150) # transparent red
+    4: (191, 143, 36),  # TOWER_P1 - 1
+    5: (191, 143, 36),  # TOWER_P1
+    6: (191, 143, 36),  # TOWER_P1 + 1
+    7: (200, 100, 100), # TOWER_P2 - 1
+    8: (200, 100, 100), # TOWER_P2
+    9: (200, 100, 100, 150), # TOWER_P2 + 1 / overlay
 }
 
 def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=None, DRAW_PLACABLE_CELLS=False, team=1):

@@ -107,23 +107,23 @@ def extract_tower_stats(tower_type):
     - Space: O(1)
     """
     if tower_type in (1, -1): # we check if it is a left or right tower
-        stats = stats_tower_small # we select the small tower stats
+        tower_stats = stats_tower_small # we select the small tower stats
     else:
-        stats = stats_tower_center # we select the center tower stats
+        tower_stats = stats_tower_center # we select the center tower stats
 
-    troop_health = stats.get("troop_health")
-    troop_damage = stats.get("troop_damage")
-    troop_movement_speed = stats.get("troop_movement_speed")
-    troop_attack_type = stats.get("troop_attack_type")
-    troop_attack_speed = stats.get("troop_attack_speed")
-    troop_attack_range = stats.get("troop_attack_range")
-    troop_attack_aggro_range = troop_attack_range
-    troop_attack_tile_radius = stats.get("troop_attack_tile_radius")
-    troop_width = stats.get("troop_width")
-    troop_height = stats.get("troop_height")
-    troop_type = stats.get("troop_type")
-    troop_favorite_target = stats.get("troop_favorite_target")
-    troop_can_target_air = stats.get("troop_can_target_air")
+    troop_health = tower_stats.get("troop_health")
+    troop_damage = tower_stats.get("troop_damage")
+    troop_movement_speed = tower_stats.get("troop_movement_speed")
+    troop_attack_type = tower_stats.get("troop_attack_type")
+    troop_attack_speed = tower_stats.get("troop_attack_speed")
+    troop_attack_range = tower_stats.get("troop_attack_range")
+    troop_attack_aggro_range = troop_attack_range # this is done on purpose to avoid possible confusion, for towers the aggro range is the same as the attack range
+    troop_attack_tile_radius = tower_stats.get("troop_attack_tile_radius")
+    troop_width = tower_stats.get("troop_width")
+    troop_height = tower_stats.get("troop_height")
+    troop_type = tower_stats.get("troop_type")
+    troop_favorite_target = tower_stats.get("troop_favorite_target")
+    troop_can_target_air = tower_stats.get("troop_can_target_air")
 
     return (
         troop_health,

@@ -1,4 +1,5 @@
 from constants import *
+from typing import Tuple
 from arena.utils.random_utils import is_cell_in_bounds, is_walkable
 from arena.utils.creation import generate_tower, generate_river, generate_mock_bridges, mirror_arena
 
@@ -267,7 +268,7 @@ class Arena:
         
         return True
 
-    def spawn_unit(self, troop, cell: (int, int)):
+    def spawn_unit(self, troop, cell: Tuple[int, int]):
         """
         Spawns a troop into the arena and marks all occupied cells
 
@@ -303,7 +304,7 @@ class Arena:
 
         return True
     
-    def move_unit(self, troop, new_cell: (int, int)):
+    def move_unit(self, troop, new_cell: Tuple[int, int]):
         """
         Used to move a troop from old cell in the occupancy_grid.
 
