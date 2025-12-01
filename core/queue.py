@@ -16,7 +16,7 @@ class Queue:
         - Time: Worst case = Average case = O(1) inserts at tail using tail pointer no traversal needed
         - Space: O(1) creates one new node
 
-        TODO: we use this instead of array because Array-based enqueue is also O(1); linked list avoids fixed capacity limitations
+        NOTE: Linked list avoids fixed capacity limitations and is always O(1)
         """
         new_node = Node(value)
         if self.head == None:
@@ -33,7 +33,7 @@ class Queue:
         - Time: Worst case = Average case = O(1) removes from head no traversal needed
         - Space: O(1) no extra space
 
-        TODO: we use this instead of array because Array-based dequeue is O(n) for shifting elements; linked list avoids this cost
+        NOTE: We use this instead of array because Array-based dequeue is O(n) for shifting elements, linked list is always O(1)
         """
         if self.head != None:
             value = self.head.value

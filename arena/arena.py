@@ -1,3 +1,5 @@
+from ast import Raise
+from multiprocessing import Value
 from arena.utils.creation import generate_tower, generate_river, generate_mock_bridges, mirror_arena
 from arena.utils.random_utils import is_cell_in_bounds, is_walkable
 from constants import *
@@ -13,7 +15,7 @@ cell = (int, int) means (row, col) in a way (y,x)
 """
 
 class Arena:
-    """TODO: Fun fact: We are going to do all the logic in cells, the pixel management is done in the visualizer."""
+    """Fun fact: We are going to do all the logic in cells, the pixel management is done in the visualizer"""
 
     def __init__(self, height): # in pixels == cells? num_cells = width / cell_size
         """
@@ -28,7 +30,8 @@ class Arena:
             raise ValueError("MULTIPLIER_GRID_HEIGHT must be greater than 0")
         # enforce height multiple of 16 and at least 32
         if height % 16 != 0 and height >= 32:
-            raise ("height of arena needs to be a multiple of 16!!! and bigger or equal than 32")
+            # because we can't modify from here the constant MULTIPLIER_GRID_HEIGHT we don't want to continue this loop with this bad values so we raise an error
+            raise ValueError("height of arena needs to be a multiple of 16!!! and bigger or equal than 32")
 
         self.height = height
         self.width = int(height/16 * 9) # ratio of width to height
@@ -172,8 +175,6 @@ class Arena:
 
         - Time: Worst case = Average case = O(1) - because constant time checks on bounds, grid value, hash table, and tower dictionary.
         - Space: O(1)
-
-        TODO: remember, we could techically precompute the valid placement areas as a separate grid, our dynamic check handles game state changes automatically.
         """
         if not is_cell_in_bounds((row, col), self.grid):
             return False
@@ -312,8 +313,6 @@ class Arena:
                 where tw/th are troop width/height 
                 because it iterates over occupied cells twice (old + new)
         - Space: O(tw * th) for temporary occupied cells dictionaries
-
-        TODO: remember alternative: Could track only boundary cells for collision; our approach works for any troop shape.
         """
         if not is_cell_in_bounds(new_cell, self.grid):
             return False
@@ -351,8 +350,6 @@ class Arena:
         - Time: Worst case = Average case = O(tw * th) 
                 where tw/th are troop width/height
         - Space: O(1) - because it just modifies existing structures
-
-        TODO: what does this mean? Could use reference counting for automatic cleanup; immediate removal prevents stale references.
         """
         if troop in self.unique_troops:
             self.unique_troops.remove(troop)

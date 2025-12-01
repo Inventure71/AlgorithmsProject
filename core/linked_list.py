@@ -14,7 +14,7 @@ def reconstruct_path(last_node: Node):
     - Time: Worst case = Average case = O(n) where n is the path length traverses the linked list once then pops all elements
     - Space: O(n) uses a stack to store all path nodes plus the output path list
 
-    TODO: explain why we use this and not alternative: Could use recursion with O(n) call stack, but iterative with explicit stack is clearer and avoids stack overflow on long paths
+    NOTE: We could use recursion with O(n) call stack, but iterative with explicit stack is clearer and avoids stack overflow on long paths
     """
     stack = Stack()
     path = []
@@ -58,7 +58,7 @@ def insert(head, value):
     - Time: Worst case = Average case = O(1) directly updates head pointer
     - Space: O(1) creates one new node
 
-    TODO: we used this instead of array insertion at index 0 because Array insertion at index 0 is O(n) due to shifting; linked list head insertion is optimal
+    NOTE: We used this instead of array insertion at index 0 because Array insertion at index 0 is O(n) due to shifting, linked list head insertion is optimal and always O(1)
     """
     new_node = Node(value, head)
     return new_node

@@ -9,7 +9,11 @@ from core.sorting import merge_sort_by_key
 import random
 
 """
-TODO: justify better, why we didn't use a dict for the hand because the hand is always going to be small (<= 4 cards) and the list is a bit more readable and adaptable to unique modifications if necessary.
+NOTE: The 'selected' list uses a Python list instead of a dictionary because:
+- Hand size is constant (<=8 cards), making O(n) operations effectively O(1)
+- Lists preserve insertion order for display consistency
+- List operations like append/remove are more readable for this use case
+- A dictionary would require additional key management for almost no performance benefit
 """
 
 def run_deck_builder(screen, asset_manager):

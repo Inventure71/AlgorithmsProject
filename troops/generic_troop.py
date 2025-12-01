@@ -158,7 +158,7 @@ class Troop:
             target_grid = closest_troop.get_occupancy_grid()
             collision_grid = self.get_occupancy_grid()
 
-            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+            path = find_path_bfs(self.location, self.arena.grid, collision_grid, target_grid, self, cell_type=self.is_targetting_something)
             self.current_path_index = 0
 
         else:
@@ -250,13 +250,14 @@ class Troop:
     """MAIN FUNCTIONS"""
     def move_to_tower(self, got_blocked=False):
         """
-        TODO: improve this
-        Main movement logic - finds target, paths to it, and moves along path
+        Main movement logic: finds target, paths to it, moves along path and if close enough attacks
         
-        - Time: O(n + V + E) where n is troops for target finding and V + E for BFS pathfinding
-        - Space: O(V) for path storage
-        
-        BFS handles dynamic obstacles and find nearest
+        - Time: Worst case = Average case = O(n + V + E) where:
+            - n is troop count for find_closest_enemy_troop linear scan
+            - V + E for BFS pathfinding (V = grid cells, E = edges up to 8V)
+        - Space: O(V) for path storage and BFS visited set
+
+        NOTE:Uses BFS for pathfinding because it guarantees shortest path on unweighted grids
         """
         if not self.is_active or not self.is_alive:
             return
@@ -283,7 +284,7 @@ class Troop:
                     target_grid = self.is_targetting_something.get_occupancy_grid()
 
                     #print(f"{self.name} not in range, finding pabth to troop")
-                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something) #TODO: make sure this is actually able to follow a troop
+                    path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), target_grid, self, cell_type=self.is_targetting_something)
                     #print(f"{self.name} trying to path to {self.is_targetting_something.name}", path)
                     self.current_path = path
                 else:
@@ -404,34 +405,3 @@ class Troop:
         else:
             self.health -= damage
             print(f"{self.name} of team {self.team} takes {damage} damage from {source_troop.name} of team {source_troop.team}, {self.health} health left")
-
-    """REMOVABLE"""          
-    def move_random_target(self):
-        """
-        THIS IS JUST A DEBUG FUNCTION
-        TODO: remove this
-        Debug function to move troop to random location
-
-        - Time: Worst case = Average case = O(V + E) for BFS pathfinding
-        - Space: O(V) for path
-        """
-        if  not self.target or self.location == self.target:
-            self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-        
-        path = find_path_bfs(self.location, self.arena.grid, self.get_occupancy_grid(), {}, self, goal_cell=self.target)
-        
-        if path:
-            for path_index in range(1, int(self.raw_movement_speed) + 1):
-                if path_index < len(path):
-                    if not self.arena.move_unit(self, path[path_index]):
-                        print("ERROR MOVING")
-                        self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-                    else:
-                        self.location = path[path_index]
-                        
-                    
-        else:
-            print("NO PATH FOUND")
-            self.target = (random.randint(0, self.arena.height-1), random.randint(0, self.arena.width-1))
-
-        

@@ -13,6 +13,7 @@ GAP_BETWEEN_TOWER_CELLS = 1 # this is the multiple of the number of cells to not
 
 DRAW_BORDERS = True
 HAND_AREA_HEIGHT = 140
+HEALTHBAR_OFFSET_Y = -8
 ARENA_BACKGROUND_USE_IMAGE = True
 DRAW_ATTACK_RANGES_DEBUG = False 
 

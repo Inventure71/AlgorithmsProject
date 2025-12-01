@@ -2,6 +2,7 @@ import os
 import pygame
 from typing import Tuple, Optional, Dict
 from assets.cache_manager import CacheManager
+from core.sorting import merge_sort_by_key
 
 class SpriteManager(CacheManager):
     """
@@ -118,10 +119,14 @@ class SpriteManager(CacheManager):
 
     def _load_sprite(self, troop_name: str, team: int, sprite_number: int) -> pygame.Surface:
         """
-        Internal method to load sprite from disk
+        Internal method to load sprite from disk using direct filename access
 
         - Time: Worst case = Average case = O(w*h) for file I/O and decoding
         - Space: O(w*h) for loaded surface
+
+        NOTE: Sprites are named 0.png, 1.png, 2.png (movement1, movement2, attack)
+        so we construct the filename directly instead of listing/sorting the directory (old implemenation)
+        This is O(1) vs O(n log n) for sorted directory listing
         """
         troop_folder = self.troop_folder_map.get(troop_name.lower())
         if not troop_folder:
@@ -132,20 +137,17 @@ class SpriteManager(CacheManager):
         if not os.path.exists(sprite_path):
             return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
         
-        sprite_files = sorted([f for f in os.listdir(sprite_path) if f.endswith('.png')]) #TODO: use a core sorting algorithm
-
-        if not sprite_files:
-            return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
+        # Direct filename construction - O(1) instead of directory listing + sorting
+        sprite_file = os.path.join(sprite_path, f"{sprite_number}.png")
         
-        # sprite_index = sprite_number 
-        if len(sprite_files) > sprite_number:
-            sprite_index = sprite_number
-        else:
-            sprite_index = 0 # fallback to first sprite
-            print(f"Sprite number {sprite_number} not found, falling back to first sprite for troop {troop_name}")
+        if not os.path.exists(sprite_file):
+            # Fallback to 0.png if requested sprite doesn't exist
+            sprite_file = os.path.join(sprite_path, "0.png")
+            if not os.path.exists(sprite_file):
+                return self._create_fallback_surface(self.STANDARD_SPRITE_SIZE, self.STANDARD_SPRITE_SIZE)
+            print(f"Sprite {sprite_number}.png not found, falling back to 0.png for troop {troop_name}")
 
         try:
-            sprite_file = os.path.join(sprite_path, sprite_files[sprite_index])
             return pygame.image.load(sprite_file).convert_alpha()
         except Exception as e:
             print(f"Error loading sprite: {e}")
@@ -169,8 +171,6 @@ class SpriteManager(CacheManager):
 
         - Time: Worst case = Average case = O(n) where n is total cached items
         - Space: O(1) frees memory
-
-        TODO: check this alternative: Could use Binary Search Tree for cache organization; full clear is simpler for level transitions.
         """
         super().clear_cache()
         self._scaled_cache.clear()

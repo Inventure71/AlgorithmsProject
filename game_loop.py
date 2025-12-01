@@ -13,17 +13,6 @@ from assets.asset_manager import AssetManager
 import pygame
 from troops.bot import GreedyBot
 
-
-"""
-TODO: review comments in UI
-
-TODO: implement princess on tower (just add the princess with photoshop) and do an attack animation (would be so much better)
-
-TODO: check if we can implement a graph for the location of the troops to see the distances or even a heap
-
-TODO: check if we can sort by rarity the cards in the deck builder
-"""
-
 colors = {
     0: (0, 0, 0),  # none
     1: (0, 214, 47),  # grass
@@ -85,10 +74,11 @@ def game_tick():
     """
     Processes one game tick - updates all troop movements
 
-    - Time: Worst case = Average case = O(n * (m + V + E)) where n is troops, m is other troops for targeting, and V + E is BFS pathfinding
-    - Space: O(V) per troop for path storage
-
-    TODO: improve this complexity analysis, The main game tick function in game_loop.py has analysis but doesn't aggregate the total complexity of running all troops
+    - Time: Worst case = Average case = O(n * (n + V + E)) where:
+        - n is the number of active troops
+        - For each troop: O(n) linear scan to find closest enemy + O(V + E) BFS pathfinding
+        - V = h * w grid cells, E = up to 8V edges for 8-directional movement
+    - Space: O(V) per troop for path storage, O(n * V) total in worst case
     """
     # only every N frames
     if arena.frame_count % TICK_RATE == 0:

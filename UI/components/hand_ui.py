@@ -7,8 +7,6 @@ def draw_hand(player, rows, cols, tile_size, asset_manager, screen, selected_car
 
     - Time: Worst case O(h), Average case O(h) where h is hand size (4) draws each card
     - Space: O(h) for card_rects list
-
-    TODO: what about alternative: Could use arrays for card positioning; immediate mode is simpler for small hand size
     """
     if not player.hand:
         return

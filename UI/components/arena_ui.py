@@ -18,8 +18,6 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
 
     - Time: Worst case O(h * w), Average case O(h * w) when rebuilding background, O(1) when using cached background
     - Space: O(h * w) for cached background surface
-
-    TODO: what about alternative: Could use multidimensional arrays for grid storage; full redraw is simpler and GPU-accelerated blit is fast
     """
     global arena_background_surface
 
@@ -83,10 +81,13 @@ def draw_units(arena, screen, tile_size, asset_manager):
     """
     Draws all troops in render order (top to bottom for proper layering)
 
-    - Time: Worst case O(n log n), Average case O(n log n) for sorting plus O(n) for drawing where n is number of troops
-    - Space: O(n) for sorted list
+    - Time: Worst case = Average case = O(n log n) for merge sort + O(n) for drawing
+    - Space: O(n) for sorted list copy
 
-    TODO: what about alternative: Could use linked lists for troop ordering; sorting by Y is simpler for 2D
+    NOTE: Sorting is preferred over maintaining a sorted linked list because:
+    - Troops move every frame, invalidating sorted order
+    - Linked list insertion would be O(n) per move vs O(n log n) once per frame
+    - Merge sort is stable, preserving relative order of same-Y troops
     """
     # using the set() to get unique troops (avoid drawing same troop multiple times)
     for troop in sort_for_visualization(arena.unique_troops, ascending_order=True):
@@ -131,8 +132,6 @@ def draw_tower(troop, screen, tile_size):
 
     - Time: Worst case O(1), Average case O(1) cached sprite lookup and single blit operation
     - Space: O(1) uses cached sprites
-
-    TODO: what about alternative: Could use arrays for asset storage; direct blitting is simpler for static towers
     """
     if not troop.asset_manager or troop.tower_number is None:
         # Fallback to colored rectangle
@@ -242,7 +241,7 @@ def draw_healthbar(troop, screen, tile_size, arena):
         visual_width = int(troop.width * tile_size)
         x_pos = int(troop.location[1] * tile_size)
         y_pos = int(troop.location[0] * tile_size)
-        bar_y = y_pos - 8  # 8 pixels above the tower (TODO: make this a variable)
+        bar_y = y_pos + HEALTHBAR_OFFSET_Y # N pixels below the tower (if n is negative than it is above)
     else:
         # regular troops: position above the sprite
         visual_scale_x = arena.width / 18.0 * 2
@@ -254,7 +253,7 @@ def draw_healthbar(troop, screen, tile_size, arena):
         cell_center_y = int((troop.location[0] + troop.height / 2.0) * tile_size)
         
         image_y = cell_center_y - visual_height // 2
-        bar_y = image_y - 8  # 8 pixels above the sprite (TODO: make this a variable)
+        bar_y = image_y + HEALTHBAR_OFFSET_Y 
         x_pos = cell_center_x - visual_width // 2
     
     # healthbar dimensions

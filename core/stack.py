@@ -19,7 +19,7 @@ class Stack:
         - Time: Worst case = Average case = O(1) inserts at head no traversal needed
         - Space: O(1) creates one new node
         
-        TODO: we use this instead of array because Array push is also O(1) amortized but O(n) when resize needed; linked list is always O(1)
+        NOTE: we use this instead of array because Array push is also O(1) amortized but O(n) when resize needed, linked list is always O(1)
         """
         new_node = Node(value, self.head)
         self.head = new_node
@@ -30,8 +30,6 @@ class Stack:
 
         - Time: Worst case = Average case = O(1) removes from head no traversal needed
         - Space: O(1) no extra space
-        
-        TODO: Alternative: Array pop is also O(1); our linked list approach avoids memory fragmentation issues of array resizing
         """
         if not self.head:
             return None

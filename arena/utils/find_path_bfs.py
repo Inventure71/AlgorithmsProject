@@ -11,8 +11,6 @@ def get_valid_neighbors(cell: (int, int), grid, collision_grid, self_troop, incl
 
     - Time: Worst case = Average case = O(d * tw * th) where d is directions 4 or 8 and tw/th are troop dimensions
     - Space: O(d)
-
-    TODO: is the alternative better? Alternative: Could use DFS for neighbor finding; BFS exploration is more systematic for grid-based movement
     """
     if include_diagonals:
         # these are the 4 directions --> up, down, left, right, top_right, bottom_right, top_right, bottom_left

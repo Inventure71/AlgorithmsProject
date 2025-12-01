@@ -50,9 +50,6 @@ class Deck:
         - Time: Worst case = Average case = O(1) enqueue to linked list queue with tail pointer
         - Space: O(1) one new node
 
-        TODO: we use this because array append could require resize O(n); linked list queue is always O(1)
+        NOTE: we use this because array append could require resize O(n); linked list queue is always O(1)
         """
         self.cards.enqueue(card)
-
-        
-

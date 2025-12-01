@@ -12,7 +12,14 @@ class Card:
     troop_name,
     asset_manager=None):
         """
-        TODO: add complexity analysis
+        Initializes a card by loading stats from the stats dictionary (hash table)
+
+        - Time: Worst case = Average case = O(1)
+            - Dictionary membership check 'in stats' is O(1) average
+            - 17 hash table lookups via stats.get().get() are each O(1)
+        - Space: O(1) stores fixed number of attributes
+
+        NOTE: Uses hash table lookups for O(1) stat retrieval instead of linear search through a list which would be O(n).
         """
         self.name = name
         self.troop_class = troop_class

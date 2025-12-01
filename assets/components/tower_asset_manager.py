@@ -2,6 +2,7 @@ import os
 import pygame
 from typing import Dict, Optional, Tuple
 from assets.cache_manager import CacheManager
+from core.sorting import merge_sort_by_key
 
 class TowerAssetManager(CacheManager):
     """
@@ -86,8 +87,14 @@ class TowerAssetManager(CacheManager):
         """
         Internal method to load tower assets from disk.
 
-        - Time: Worst case = Average case = O(w*h) where w/h are the width and height of the tower sprite
-        - Space: O(w*h) per loaded surface
+        - Time: Worst case = Average case = O(f log f + s * w * h) where:
+            - f is number of files in tower folder (typically 1-2, so effectively O(1))
+            - s is sprites loaded (1-2)
+            - w/h are sprite dimensions
+        - Space: O(s * w * h) for loaded surfaces
+
+        NOTE: Sorting is needed because tower files have mixed naming conventions, this can be changed but we wanted to demonstate another system to sort files in a folder
+        With only 1-2 files per folder, O(f log f) almost O(1)
         """
         result = {'building': None, 'character': None, 'destroyed': None}
         
@@ -98,7 +105,8 @@ class TowerAssetManager(CacheManager):
             tower_path = os.path.join(self.assets_path, "tower", f"Team{team}", tower_folder)
             
             if os.path.exists(tower_path):
-                sprite_files = sorted([f for f in os.listdir(tower_path) if f.endswith('.png')])
+                list_of_sprite_files = [f for f in os.listdir(tower_path) if f.endswith('.png')]
+                sprite_files = merge_sort_by_key(list_of_sprite_files, key=lambda x: x.lower()) # sorted
                 
                 if tower_type == 0 and len(sprite_files) >= 2:
                     # King tower: building + character

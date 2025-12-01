@@ -36,7 +36,16 @@ class Player:
 
     def place_troop(self, location, card):
         """
-        TODO: add complexity analysis
+        Places troops from a card at specified location and draws replacement card
+
+        - Time: Worst case = Average case = O(c * tw * th + h) where:
+            - c is troop count (from card)
+            - tw/th are troop width/height for spawn validation
+            - h is hand size (4) for linear search
+        - Space: O(c) for troops list
+
+        NOTE: Uses swap-in-place via draw_card(swap=index) to achieve O(1) card replacement instead of O(h) removal + O(1) append. 
+        NOTE: Linear search O(h) is unavoidable for finding the card, but h is constant (4) so effectively O(1).
         """
         #troop = card.create_troop(self.team)
         troops = card.create_troops(self.team)
@@ -75,7 +84,15 @@ class Player:
 
     def draw_card(self, swap=None):
         """
-        TODO: add complexity analysis
+        Draws a card from deck to hand, either appending or swapping in place if a swap index is provided
+
+        - Time: Worst case = Average case = O(1)
+            - Queue dequeue is O(1) with tail pointer
+            - List index assignment is O(1)
+            - List append is O(1) amortized
+        - Space: O(1) adds one card reference
+
+        The swap parameter enables O(1) in-place replacement instead of O(h) pop + O(1) append when replacing a played card.
         """
         if swap is not None:
             self.hand[swap] = self.deck.get_card()
