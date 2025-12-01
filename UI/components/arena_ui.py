@@ -2,6 +2,9 @@ import pygame
 from constants import *
 from core.sorting import sort_for_visualization
 
+placeable_overlay_surface = None
+placeable_overlay_team = None
+
 colors = {
     0: (0, 0, 0),  # none
     1: (0, 214, 47),  # grass
@@ -9,17 +12,17 @@ colors = {
     3: (133, 133, 133),   # bridge
     4: (191, 143, 36), # tower p1
     5: (200, 100, 100), # tower p2
-    9: (200, 100, 100, 100) # transparent red
+    9: (200, 100, 100, 150) # transparent red
 }
 
 def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_card=None, DRAW_PLACABLE_CELLS=False, team=1):
     """
     Draws the arena grid and optional placeable cell overlay
 
-    - Time: Worst case O(h * w), Average case O(h * w) when rebuilding background, O(1) when using cached background
-    - Space: O(h * w) for cached background surface
+    - Time: Worst case O(h * w), Average case O(1) when using cached surfaces
+    - Space: O(h * w) for cached background + O(h * w) for cached overlay
     """
-    global arena_background_surface
+    global arena_background_surface, placeable_overlay_surface, placeable_overlay_team
 
     arena_width = int(cols * tile_size)
     arena_height = int(rows * tile_size)
@@ -66,16 +69,22 @@ def draw_arena(cols, rows, tile_size, asset_manager, screen, arena, selected_car
     
     # only draw placable cells overlay if needed (this changes dynamically)
     if DRAW_PLACABLE_CELLS or selected_card is not None:
-        for y, row in enumerate(arena.grid):
-            for x, value in enumerate(row):
-                # we draw as red the cells where we CANNOT place a troop so we use not is_placable_cell
-                if not arena.is_placable_cell(y, x, team=team, is_flying=False):
-                    x_pos = int(x * tile_size)
-                    y_pos = int(y * tile_size)
-                    width = int((x + 1) * tile_size) - x_pos
-                    height = int((y + 1) * tile_size) - y_pos
-                    rect = pygame.Rect(x_pos, y_pos, width, height)
-                    pygame.draw.rect(screen, colors[9], rect)
+        if placeable_overlay_surface is None or arena.arena_background_dirty or placeable_overlay_team != team:
+            placeable_overlay_surface = pygame.Surface((arena_width, arena_height), pygame.SRCALPHA) # we need to create a separate surface for the overlay in order to achieve transparency
+            placeable_overlay_team = team
+
+            for y, row in enumerate(arena.grid):
+                for x, value in enumerate(row):
+                    # we draw as red the cells where we CANNOT place a troop so we use not is_placable_cell
+                    if not arena.is_placable_cell(y, x, team=team, is_flying=False):
+                        x_pos = int(x * tile_size)
+                        y_pos = int(y * tile_size)
+                        width = int((x + 1) * tile_size) - x_pos
+                        height = int((y + 1) * tile_size) - y_pos
+                        rect = pygame.Rect(x_pos, y_pos, width, height)
+                        pygame.draw.rect(placeable_overlay_surface, colors[9], rect)
+
+        screen.blit(placeable_overlay_surface, (0, 0))
 
 def draw_units(arena, screen, tile_size, asset_manager):
     """

@@ -17,7 +17,7 @@ stats_barbarian = {
     "troop_height": 1,
     "troop_cost": 5,
     "troop_count": 5,
-    "scale_multiplier": 0.5
+    "scale_multiplier": 0.6
 }
 stats_archer = {
     "troop_health": 252,
@@ -36,7 +36,7 @@ stats_archer = {
     "troop_height": 1,
     "troop_cost": 3,
     "troop_count": 2,
-    "scale_multiplier": 0.5
+    "scale_multiplier": 0.6
 }
 
 stats_giant = {
@@ -56,7 +56,7 @@ stats_giant = {
     "troop_height": 1,
     "troop_cost": 5,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 1.2
 }
 
 stats_goblins = {
@@ -172,7 +172,7 @@ stats_musketeer = {
     "troop_height": 1,
     "troop_cost": 4,
     "troop_count": 1,
-    "scale_multiplier": 0.5
+    "scale_multiplier": 0.8
 }
 stats_pekka = {
     "troop_health": 2618,
@@ -210,7 +210,7 @@ stats_royal_giant = {
     "troop_height": 1,
     "troop_cost": 6,
     "troop_count": 1,
-    "scale_multiplier": 1
+    "scale_multiplier": 1.2
 }
 
 stats_skeletons = {
