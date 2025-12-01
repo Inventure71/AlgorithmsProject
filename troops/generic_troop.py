@@ -401,15 +401,15 @@ class Troop:
                     return True
             
                 elif (self.arena.frame_count-self.in_process_attack) >= self.attack_speed * 0.70:
-                    self.swap_sprite(moving=False, reset_attack=False)  # Attack sprite (windup before hit)
+                    self.swap_sprite(moving=False, reset_attack=False)  # attack sprite (windup before hit)
             
                 elif (self.arena.frame_count-self.in_process_attack) >= self.attack_speed * 0.40:
-                    self.swap_sprite(moving=False, reset_attack=True)  # Idle sprite (charging)
+                    self.swap_sprite(moving=False, reset_attack=True)  # idle sprite (charging)
             
             
             else:
                 self.in_process_attack = self.arena.frame_count
-                self.swap_sprite(moving=True) # HEREEEEEE
+                self.swap_sprite(moving=True)
 
             return True
         print(f"{self.name} is dead or inactive, cannot attack")
