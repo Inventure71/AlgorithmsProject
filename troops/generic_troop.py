@@ -148,7 +148,7 @@ class Troop:
 
         else: # lighter pathing, we ignore troops
             path = find_path_bfs(self.location, self.arena.grid, {}, {}, self, cell_type=tower_to_find)
-
+            self.current_path_index = 0
         
         if self.attack_aggro_range >= minimum_distance_to_troop >= 0 and closest_troop is not None:
             should_lock_on = True # by default we lock on the troop
