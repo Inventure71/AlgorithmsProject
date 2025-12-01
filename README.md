@@ -4,7 +4,7 @@ Clash Royale but built with Python and Pygame
 
 Battle against a bot opponent by placing troops on the arena to destroy enemy towers. The goal is to destroy more towers than your opponent before time runs out.
 
-- **Build your deck** from 12 available troops
+- **Build your deck** from 16 available troops
 - **Spend elixir** to deploy troops (elixir regenerates over time)
 - **Destroy more towers** to win the match (or destroy the central tower)
 
@@ -25,3 +25,6 @@ python game_loop.py
 1. **Deck Builder**: Select 8 cards for your deck from the menu
 2. **Place Troops**: Click a card in your hand, then click in the non red area of the arena to deploy
 3. **Win Condition**: Destroy more enemy towers than you lose before time expires
+
+## Basic gameplay video
+[![Gameplay Video](https://img.youtube.com/vi/35BMyos7Oa8/maxresdefault.jpg)](https://youtu.be/35BMyos7Oa8)
